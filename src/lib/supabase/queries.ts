@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "./server";
 import type { AppItem, AppStatus, Category, CategorySlug } from "@/data/types";
 import { getCategoryBySlug as getStaticCategoryBySlug } from "@/data/categories";
@@ -61,7 +62,14 @@ export type CurrentUser = {
   role: "user" | "developer" | "admin";
 };
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+// Every layout/page on a route independently needs to know who's signed
+// in, which used to mean a fresh network round-trip to Supabase Auth per
+// call site (Header, root layout, section layout, and the page itself
+// could each fire their own `auth.getUser()` for a single navigation).
+// `cache()` makes React reuse the same in-flight/resolved call for the
+// life of one request, so however many places call this, only one actual
+// auth check happens — the check itself is unchanged.
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -80,7 +88,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     fullName: profile?.full_name ?? null,
     role: profile?.role ?? "user",
   };
-}
+});
 
 export async function getCategories(): Promise<Category[]> {
   const supabase = await createClient();

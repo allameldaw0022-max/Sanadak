@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Cairo } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+async function AccountAwareMobileNav() {
   const user = await getCurrentUser();
   const accountHref = !user
     ? "/login"
@@ -38,13 +39,19 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         ? "/developer/dashboard"
         : "/account";
 
+  return <MobileNav accountHref={accountHref} />;
+}
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-bg text-navy">
         <Header />
         <main className="flex-1 pb-20 md:pb-0">{children}</main>
         <Footer />
-        <MobileNav accountHref={accountHref} />
+        <Suspense fallback={<MobileNav accountHref="/login" />}>
+          <AccountAwareMobileNav />
+        </Suspense>
       </body>
     </html>
   );

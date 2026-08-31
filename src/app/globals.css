@@ -19,10 +19,6 @@
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     background: var(--color-bg);
     color: var(--color-navy);
