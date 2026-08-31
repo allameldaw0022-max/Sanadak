@@ -45,8 +45,8 @@ export default async function AdminAppDetailPage({ params }: { params: Promise<{
             </div>
           </div>
 
-          {app.status === "pending" && (
-            <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 gap-2">
+            {app.status !== "approved" && (
               <form action={approveAppAction}>
                 <input type="hidden" name="appId" value={app.id} />
                 <button
@@ -57,12 +57,14 @@ export default async function AdminAppDetailPage({ params }: { params: Promise<{
                   اعتماد التطبيق
                 </button>
               </form>
+            )}
+            {app.status !== "rejected" && (
               <RejectAppButton
                 appId={app.id}
                 className="flex h-11 items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
