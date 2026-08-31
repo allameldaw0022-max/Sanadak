@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { LogIn, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
@@ -65,9 +66,13 @@ export default function LoginPage() {
     <Container className="flex min-h-[70vh] items-center justify-center py-12">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="mb-6 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-extrabold text-white">
-            س
-          </span>
+          <Image
+            src="/logo-mark.png"
+            alt="سندك"
+            width={48}
+            height={48}
+            className="mx-auto h-12 w-12 rounded-xl object-cover"
+          />
           <h1 className="mt-4 text-xl font-extrabold text-navy">
             {mode === "signin" ? "تسجيل الدخول إلى سندك" : "إنشاء حساب جديد"}
           </h1>

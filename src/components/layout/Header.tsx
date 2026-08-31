@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Search, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SearchBar } from "@/components/ui/SearchBar";
@@ -18,9 +19,14 @@ export async function Header() {
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-sm">
       <Container className="flex h-16 items-center gap-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base font-extrabold text-white">
-            س
-          </span>
+          <Image
+            src="/logo-mark.png"
+            alt="سندك"
+            width={36}
+            height={36}
+            priority
+            className="h-9 w-9 shrink-0 rounded-xl object-cover"
+          />
           <span className="text-lg font-extrabold text-navy">سندك</span>
         </Link>
 

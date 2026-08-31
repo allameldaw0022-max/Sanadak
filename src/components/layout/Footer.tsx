@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 
 const quickLinks = [
@@ -14,9 +15,13 @@ export function Footer() {
       <Container className="grid grid-cols-1 gap-10 py-12 sm:grid-cols-3">
         <div>
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base font-extrabold text-white">
-              س
-            </span>
+            <Image
+              src="/logo-mark.png"
+              alt="سندك"
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-xl object-cover"
+            />
             <span className="text-lg font-extrabold text-navy">سندك</span>
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
