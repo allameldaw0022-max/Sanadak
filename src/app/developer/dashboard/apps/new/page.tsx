@@ -150,15 +150,28 @@ export default function AddAppPage() {
     }
 
     const slug = slugify(name);
-    const apkPath = `${user.id}/${slug}.apk`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("sanadak-apks")
-      .upload(apkPath, apkFile, {
-        contentType: "application/vnd.android.package-archive",
-      });
+    const uploadUrlRes = await fetch("/api/r2/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: apkFile.name }),
+    });
 
-    if (uploadError) {
+    if (!uploadUrlRes.ok) {
+      setLoading(false);
+      setError("تعذر تجهيز رفع ملف APK، حاول مرة أخرى.");
+      return;
+    }
+
+    const { uploadUrl, key: apkPath } = await uploadUrlRes.json();
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/vnd.android.package-archive" },
+      body: apkFile,
+    });
+
+    if (!uploadRes.ok) {
       setLoading(false);
       setError("تعذر رفع ملف APK، حاول مرة أخرى.");
       return;
@@ -182,7 +195,11 @@ export default function AddAppPage() {
     setLoading(false);
 
     if (insertError) {
-      await supabase.storage.from("sanadak-apks").remove([apkPath]);
+      await fetch("/api/r2/delete-object", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: apkPath }),
+      });
       setError("تعذر إرسال التطبيق للمراجعة، حاول مرة أخرى.");
       return;
     }

@@ -32,16 +32,19 @@ export function DownloadButton({
       return;
     }
 
-    const { data, error } = await supabase.storage
-      .from("sanadak-apks")
-      .createSignedUrl(apkPath, 60);
+    const res = await fetch("/api/r2/download-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId }),
+    });
 
-    if (error || !data?.signedUrl) {
+    if (!res.ok) {
       setStatus("error");
       return;
     }
 
-    window.location.href = data.signedUrl;
+    const { downloadUrl } = await res.json();
+    window.location.href = downloadUrl;
     setStatus("done");
   }
 
