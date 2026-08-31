@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PlusCircle, Store } from "lucide-react";
+import { LayoutDashboard, PlusCircle, CreditCard, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/developer/dashboard", label: "نظرة عامة", icon: LayoutDashboard },
   { href: "/developer/dashboard/apps/new", label: "إضافة تطبيق", icon: PlusCircle },
+  { href: "/developer/subscription", label: "الاشتراك والدفع", icon: CreditCard },
 ];
 
 export function DeveloperSidebar({

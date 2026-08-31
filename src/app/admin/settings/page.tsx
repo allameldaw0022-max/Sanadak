@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreditCard, ChevronLeft } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase/queries";
 
 export const metadata: Metadata = {
@@ -33,6 +35,22 @@ export default async function AdminSettingsPage() {
           </div>
         </div>
       </div>
+
+      <Link
+        href="/admin/settings/payment"
+        className="mt-4 flex max-w-md items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-primary/40"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">
+            <CreditCard className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-navy">إعدادات الدفع</p>
+            <p className="text-xs text-slate-500">الحساب البنكي، سعر الصرف، وأسعار الخطط</p>
+          </div>
+        </div>
+        <ChevronLeft className="h-5 w-5 text-slate-400" />
+      </Link>
     </div>
   );
 }

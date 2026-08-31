@@ -222,6 +222,159 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_requests: {
+        Row: {
+          admin_note: string | null
+          amount_sdg: number
+          amount_usd: number
+          created_at: string
+          developer_id: string
+          exchange_rate: number
+          id: string
+          note: string | null
+          payer_name: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          proof_path: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string | null
+          transaction_reference: string
+          transfer_date: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_sdg: number
+          amount_usd: number
+          created_at?: string
+          developer_id: string
+          exchange_rate: number
+          id?: string
+          note?: string | null
+          payer_name: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          proof_path: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string | null
+          transaction_reference: string
+          transfer_date: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_sdg?: number
+          amount_usd?: number
+          created_at?: string
+          developer_id?: string
+          exchange_rate?: number
+          id?: string
+          note?: string | null
+          payer_name?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          proof_path?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string | null
+          transaction_reference?: string
+          transfer_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_requests_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_settings: {
+        Row: {
+          account_holder_name: string
+          account_number: string
+          bank_name: string
+          basic_max_apps: number
+          basic_price_usd: number
+          free_trial_days: number
+          free_trial_max_developers: number
+          grace_period_days: number
+          iban: string
+          id: number
+          payment_instructions: string
+          payment_method_name: string
+          phone: string
+          pro_price_usd: number
+          updated_at: string
+          updated_by: string | null
+          usd_to_sdg_rate: number
+        }
+        Insert: {
+          account_holder_name?: string
+          account_number?: string
+          bank_name?: string
+          basic_max_apps?: number
+          basic_price_usd?: number
+          free_trial_days?: number
+          free_trial_max_developers?: number
+          grace_period_days?: number
+          iban?: string
+          id?: number
+          payment_instructions?: string
+          payment_method_name?: string
+          phone?: string
+          pro_price_usd?: number
+          updated_at?: string
+          updated_by?: string | null
+          usd_to_sdg_rate?: number
+        }
+        Update: {
+          account_holder_name?: string
+          account_number?: string
+          bank_name?: string
+          basic_max_apps?: number
+          basic_price_usd?: number
+          free_trial_days?: number
+          free_trial_max_developers?: number
+          grace_period_days?: number
+          iban?: string
+          id?: number
+          payment_instructions?: string
+          payment_method_name?: string
+          phone?: string
+          pro_price_usd?: number
+          updated_at?: string
+          updated_by?: string | null
+          usd_to_sdg_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -294,18 +447,98 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          developer_id: string
+          expires_at: string | null
+          id: string
+          is_free_trial: boolean
+          max_apps: number | null
+          plan: Database["public"]["Enums"]["subscription_plan"] | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_slot: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          developer_id: string
+          expires_at?: string | null
+          id?: string
+          is_free_trial?: boolean
+          max_apps?: number | null
+          plan?: Database["public"]["Enums"]["subscription_plan"] | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_slot?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          developer_id?: string
+          expires_at?: string | null
+          id?: string
+          is_free_trial?: boolean
+          max_apps?: number | null
+          plan?: Database["public"]["Enums"]["subscription_plan"] | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_slot?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      approve_payment_request: {
+        Args: { p_admin_note?: string; p_request_id: string }
+        Returns: undefined
+      }
+      create_payment_request: {
+        Args: {
+          p_note?: string
+          p_payer_name: string
+          p_plan: Database["public"]["Enums"]["subscription_plan"]
+          p_proof_path: string
+          p_transaction_reference: string
+          p_transfer_date: string
+        }
+        Returns: string
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      developer_can_add_app: {
+        Args: { p_developer_id: string }
+        Returns: boolean
+      }
+      reject_payment_request: {
+        Args: { p_admin_note: string; p_request_id: string }
+        Returns: undefined
+      }
+      sync_subscription_status: {
+        Args: { p_developer_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_status: "pending" | "approved" | "rejected"
+      payment_status: "pending" | "approved" | "rejected" | "cancelled"
+      subscription_plan: "trial" | "basic" | "pro"
+      subscription_status: "trial" | "active" | "expired" | "suspended"
       user_role: "user" | "developer" | "admin"
     }
     CompositeTypes: {
@@ -435,6 +668,9 @@ export const Constants = {
   public: {
     Enums: {
       app_status: ["pending", "approved", "rejected"],
+      payment_status: ["pending", "approved", "rejected", "cancelled"],
+      subscription_plan: ["trial", "basic", "pro"],
+      subscription_status: ["trial", "active", "expired", "suspended"],
       user_role: ["user", "developer", "admin"],
     },
   },

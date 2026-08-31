@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LayoutGrid, CheckCircle2, Clock, XCircle, UserCog, Users, Download } from "lucide-react";
+import { LayoutGrid, CheckCircle2, Clock, XCircle, UserCog, Users, Download, DollarSign, CreditCard } from "lucide-react";
 import { StatsCard } from "@/components/developer/StatsCard";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { StatusBadge } from "@/components/ui/Badge";
-import { getAdminStats, getAdminApps } from "@/lib/supabase/queries";
+import { getAdminStats, getAdminApps, getAdminPaymentStats } from "@/lib/supabase/queries";
 import { formatDownloads } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -12,7 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const [stats, apps] = await Promise.all([getAdminStats(), getAdminApps()]);
+  const [stats, apps, paymentStats] = await Promise.all([
+    getAdminStats(),
+    getAdminApps(),
+    getAdminPaymentStats(),
+  ]);
   const recentPending = apps.filter((app) => app.status === "pending").slice(0, 5);
 
   return (
@@ -35,6 +39,44 @@ export default async function AdminDashboardPage() {
           icon={Download}
           color="#DB2777"
         />
+      </div>
+
+      <div className="mt-10">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-navy">الاشتراكات والإيرادات</h2>
+          <Link
+            href="/admin/payments"
+            className="text-sm font-semibold text-primary hover:text-primary-dark"
+          >
+            عرض المدفوعات
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatsCard
+            label="إيرادات هذا الشهر"
+            value={`$${paymentStats.revenueThisMonthUsd.toLocaleString("en-US")}`}
+            icon={DollarSign}
+            color="#16A34A"
+          />
+          <StatsCard
+            label="إيرادات هذه السنة"
+            value={`$${paymentStats.revenueThisYearUsd.toLocaleString("en-US")}`}
+            icon={DollarSign}
+            color="#0F172A"
+          />
+          <StatsCard
+            label="اشتراكات نشطة (أساسي/احترافي)"
+            value={`${paymentStats.activeBasicCount} / ${paymentStats.activeProCount}`}
+            icon={UserCog}
+            color="#0EA5E9"
+          />
+          <StatsCard
+            label="طلبات دفع معلقة"
+            value={paymentStats.pendingCount}
+            icon={CreditCard}
+            color="#B45309"
+          />
+        </div>
       </div>
 
       <div className="mt-10">

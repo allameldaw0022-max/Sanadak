@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 import { LayoutGrid, Download, CheckCircle2, Clock, PlusCircle } from "lucide-react";
 import { StatsCard } from "@/components/developer/StatsCard";
 import { AppsTable } from "@/components/developer/AppsTable";
-import { getCurrentUser, getDeveloperApps, getDeveloperStats } from "@/lib/supabase/queries";
+import { SubscriptionStatusCard } from "@/components/developer/SubscriptionStatusCard";
+import {
+  getCurrentUser,
+  getDeveloperApps,
+  getDeveloperStats,
+  getDeveloperSubscription,
+} from "@/lib/supabase/queries";
 import { formatDownloads } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -15,9 +21,10 @@ export default async function DeveloperDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [stats, developerApps] = await Promise.all([
+  const [stats, developerApps, subscription] = await Promise.all([
     getDeveloperStats(user.id),
     getDeveloperApps(user.id),
+    getDeveloperSubscription(user.id),
   ]);
 
   return (
@@ -35,6 +42,12 @@ export default async function DeveloperDashboardPage() {
           إضافة تطبيق
         </Link>
       </div>
+
+      {subscription && (
+        <div className="mb-6">
+          <SubscriptionStatusCard subscription={subscription} compact />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard label="عدد التطبيقات" value={stats.totalApps} icon={LayoutGrid} color="#16A34A" />
