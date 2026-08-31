@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { LayoutGrid, Download, CheckCircle2, Clock, PlusCircle } from "lucide-react";
 import { StatsCard } from "@/components/developer/StatsCard";
 import { AppsTable } from "@/components/developer/AppsTable";
@@ -12,9 +13,11 @@ export const metadata: Metadata = {
 
 export default async function DeveloperDashboardPage() {
   const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
   const [stats, developerApps] = await Promise.all([
-    getDeveloperStats(user!.id),
-    getDeveloperApps(user!.id),
+    getDeveloperStats(user.id),
+    getDeveloperApps(user.id),
   ]);
 
   return (
