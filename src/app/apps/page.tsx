@@ -2,9 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { AppCard } from "@/components/ui/AppCard";
-import { apps } from "@/data/apps";
-import { categories, getCategoryBySlug } from "@/data/categories";
 import { cn } from "@/lib/utils";
+import {
+  getApprovedApps,
+  getAppsByCategory,
+  getCategories,
+  getCategoryBySlug,
+} from "@/lib/supabase/queries";
 
 export const metadata: Metadata = {
   title: "جميع التطبيقات | سندك",
@@ -16,10 +20,13 @@ export default async function AppsPage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const { category } = await searchParams;
-  const activeCategory = category ? getCategoryBySlug(category) : undefined;
+  const [categories, activeCategory] = await Promise.all([
+    getCategories(),
+    category ? getCategoryBySlug(category) : Promise.resolve(undefined),
+  ]);
   const filteredApps = activeCategory
-    ? apps.filter((app) => app.categorySlug === activeCategory.slug)
-    : apps;
+    ? await getAppsByCategory(activeCategory.slug)
+    : await getApprovedApps();
 
   return (
     <Container className="py-8 sm:py-12">

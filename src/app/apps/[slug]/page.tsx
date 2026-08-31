@@ -8,13 +8,8 @@ import { DownloadButton } from "@/components/ui/DownloadButton";
 import { Screenshot } from "@/components/ui/Screenshot";
 import { AppCard } from "@/components/ui/AppCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { apps, getAppBySlug, getSimilarApps } from "@/data/apps";
-import { getCategoryBySlug } from "@/data/categories";
+import { getAppBySlug, getCategoryBySlug, getSimilarApps } from "@/lib/supabase/queries";
 import { formatDate, formatDownloads } from "@/lib/utils";
-
-export function generateStaticParams() {
-  return apps.map((app) => ({ slug: app.slug }));
-}
 
 export async function generateMetadata({
   params,
@@ -22,7 +17,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const app = getAppBySlug(slug);
+  const app = await getAppBySlug(slug);
   if (!app) return { title: "التطبيق غير موجود | سندك" };
   return { title: `${app.name} | سندك`, description: app.shortDescription };
 }
@@ -33,11 +28,13 @@ export default async function AppDetailsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const app = getAppBySlug(slug);
+  const app = await getAppBySlug(slug);
   if (!app) notFound();
 
-  const category = getCategoryBySlug(app.categorySlug);
-  const similarApps = getSimilarApps(app);
+  const [category, similarApps] = await Promise.all([
+    getCategoryBySlug(app.categorySlug),
+    getSimilarApps(app),
+  ]);
 
   const infoItems = [
     { icon: User, label: "المطور", value: app.developer },
@@ -70,7 +67,7 @@ export default async function AppDetailsPage({
         </div>
 
         <div className="w-full shrink-0 lg:w-72">
-          <DownloadButton />
+          <DownloadButton appId={app.id} />
           <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-center">
             <div>
               <p className="text-xs text-slate-500">الإصدار</p>

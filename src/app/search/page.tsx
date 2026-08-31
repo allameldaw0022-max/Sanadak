@@ -3,7 +3,7 @@ import { SearchX } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { AppCard } from "@/components/ui/AppCard";
-import { searchApps } from "@/data/apps";
+import { searchApps } from "@/lib/supabase/queries";
 
 export const metadata: Metadata = {
   title: "البحث | سندك",
@@ -15,7 +15,7 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q = "" } = await searchParams;
-  const results = searchApps(q);
+  const results = await searchApps(q);
 
   return (
     <Container className="py-8 sm:py-12">

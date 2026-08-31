@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { CategoryCard } from "@/components/ui/CategoryCard";
-import { categories } from "@/data/categories";
-import { getAppsByCategory } from "@/data/apps";
+import { getCategories, getCategoryCounts } from "@/lib/supabase/queries";
 
 export const metadata: Metadata = {
   title: "التصنيفات | سندك",
 };
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const [categories, categoryCounts] = await Promise.all([
+    getCategories(),
+    getCategoryCounts(),
+  ]);
+
   return (
     <Container className="py-8 sm:py-12">
       <div className="mb-8">
@@ -21,7 +25,7 @@ export default function CategoriesPage() {
           <CategoryCard
             key={category.slug}
             category={category}
-            count={getAppsByCategory(category.slug).length}
+            count={categoryCounts[category.slug] ?? 0}
           />
         ))}
       </div>

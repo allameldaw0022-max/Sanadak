@@ -4,21 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, PlusCircle, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { currentDeveloper } from "@/data/developer";
 
 const links = [
   { href: "/developer/dashboard", label: "نظرة عامة", icon: LayoutDashboard },
   { href: "/developer/dashboard/apps/new", label: "إضافة تطبيق", icon: PlusCircle },
 ];
 
-export function DeveloperSidebar() {
+export function DeveloperSidebar({
+  developerName,
+  developerEmail,
+}: {
+  developerName: string;
+  developerEmail: string;
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="hidden w-64 shrink-0 border-l border-slate-200 bg-white md:flex md:flex-col">
       <div className="border-b border-slate-100 p-6">
-        <p className="text-sm font-bold text-navy">{currentDeveloper.name}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-500">{currentDeveloper.email}</p>
+        <p className="text-sm font-bold text-navy">{developerName}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{developerEmail}</p>
       </div>
 
       <nav className="flex-1 space-y-1 p-4">

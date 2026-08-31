@@ -1,16 +1,52 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { UserPlus, CheckCircle2, ArrowLeft } from "lucide-react";
+import { UserPlus, CheckCircle2, ArrowLeft, AlertCircle } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DeveloperRegisterPage() {
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const supabase = createClient();
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName, role: "developer" } },
+    });
+
+    setLoading(false);
+
+    if (signUpError) {
+      setError(
+        signUpError.message.includes("already registered")
+          ? "هذا البريد الإلكتروني مسجل بالفعل."
+          : "تعذر إنشاء الحساب، حاول مرة أخرى."
+      );
+      return;
+    }
+
+    if (!data.session) {
+      setPendingConfirmation(true);
+      return;
+    }
+
     setSubmitted(true);
+    router.refresh();
   }
 
   return (
@@ -26,13 +62,25 @@ export default function DeveloperRegisterPage() {
           </p>
         </div>
 
-        {submitted ? (
+        {pendingConfirmation ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <CheckCircle2 className="h-10 w-10 text-primary" />
+            <p className="text-sm font-semibold text-navy">تم إنشاء حساب المطور بنجاح</p>
+            <p className="text-xs text-slate-500">
+              تحقق من بريدك الإلكتروني لتأكيد الحساب، ثم سجّل الدخول للوصول للوحة التحكم.
+            </p>
+            <Link
+              href="/login"
+              className="mt-3 flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white hover:bg-primary-dark"
+            >
+              تسجيل الدخول
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </div>
+        ) : submitted ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <CheckCircle2 className="h-10 w-10 text-primary" />
             <p className="text-sm font-semibold text-navy">تم إنشاء حسابك بنجاح</p>
-            <p className="text-xs text-slate-500">
-              هذه نسخة تجريبية — سيتم تفعيل التسجيل الفعلي لاحقًا.
-            </p>
             <Link
               href="/developer/dashboard"
               className="mt-3 flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white hover:bg-primary-dark"
@@ -43,31 +91,19 @@ export default function DeveloperRegisterPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="fullname" className="mb-1.5 block text-sm font-semibold text-navy">
-                  الاسم الكامل
-                </label>
-                <input
-                  id="fullname"
-                  type="text"
-                  required
-                  placeholder="اسمك أو اسم شركتك"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="mb-1.5 block text-sm font-semibold text-navy">
-                  رقم الهاتف
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  required
-                  placeholder="09xxxxxxxx"
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+            <div>
+              <label htmlFor="fullname" className="mb-1.5 block text-sm font-semibold text-navy">
+                الاسم الكامل / اسم الشركة
+              </label>
+              <input
+                id="fullname"
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="اسمك أو اسم شركتك"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
+              />
             </div>
 
             <div>
@@ -78,6 +114,8 @@ export default function DeveloperRegisterPage() {
                 id="dev-email"
                 type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="developer@example.com"
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
               />
@@ -91,17 +129,28 @@ export default function DeveloperRegisterPage() {
                 id="dev-password"
                 type="password"
                 required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
+            {error && (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-red-600">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+              disabled={loading}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
             >
               <UserPlus className="h-4 w-4" />
-              إنشاء حساب مطور
+              {loading ? "جارٍ الإنشاء..." : "إنشاء حساب مطور"}
             </button>
           </form>
         )}

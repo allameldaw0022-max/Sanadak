@@ -3,7 +3,7 @@ import type { AppStatus } from "@/data/types";
 import { getStatusLabel } from "@/lib/utils";
 
 const statusStyles: Record<AppStatus, string> = {
-  published: "bg-primary-light text-primary-dark",
+  approved: "bg-primary-light text-primary-dark",
   pending: "bg-amber-50 text-amber-700",
   rejected: "bg-red-50 text-red-600",
 };

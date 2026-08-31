@@ -3,15 +3,19 @@ import type { Metadata } from "next";
 import { LayoutGrid, Download, CheckCircle2, Clock, PlusCircle } from "lucide-react";
 import { StatsCard } from "@/components/developer/StatsCard";
 import { AppsTable } from "@/components/developer/AppsTable";
-import { developerApps, getDeveloperStats } from "@/data/developer";
+import { getCurrentUser, getDeveloperApps, getDeveloperStats } from "@/lib/supabase/queries";
 import { formatDownloads } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "لوحة التحكم | سندك",
 };
 
-export default function DeveloperDashboardPage() {
-  const stats = getDeveloperStats();
+export default async function DeveloperDashboardPage() {
+  const user = await getCurrentUser();
+  const [stats, developerApps] = await Promise.all([
+    getDeveloperStats(user!.id),
+    getDeveloperApps(user!.id),
+  ]);
 
   return (
     <div>

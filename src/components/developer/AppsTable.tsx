@@ -1,10 +1,10 @@
-import type { DeveloperApp } from "@/data/types";
+import type { AppItem } from "@/data/types";
 import { getCategoryBySlug } from "@/data/categories";
 import { formatDate, formatDownloads } from "@/lib/utils";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { StatusBadge } from "@/components/ui/Badge";
 
-export function AppsTable({ apps }: { apps: DeveloperApp[] }) {
+export function AppsTable({ apps }: { apps: AppItem[] }) {
   if (apps.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
@@ -24,7 +24,7 @@ export function AppsTable({ apps }: { apps: DeveloperApp[] }) {
               <th className="px-5 py-3 font-semibold">الإصدار</th>
               <th className="px-5 py-3 font-semibold">الحالة</th>
               <th className="px-5 py-3 font-semibold">التحميلات</th>
-              <th className="px-5 py-3 font-semibold">تاريخ الإرسال</th>
+              <th className="px-5 py-3 font-semibold">آخر تحديث</th>
             </tr>
           </thead>
           <tbody>
@@ -46,7 +46,7 @@ export function AppsTable({ apps }: { apps: DeveloperApp[] }) {
                   <td className="px-5 py-3 text-slate-600">
                     {app.downloads > 0 ? formatDownloads(app.downloads) : "—"}
                   </td>
-                  <td className="px-5 py-3 text-slate-500">{formatDate(app.submittedAt)}</td>
+                  <td className="px-5 py-3 text-slate-500">{formatDate(app.lastUpdate)}</td>
                 </tr>
               );
             })}

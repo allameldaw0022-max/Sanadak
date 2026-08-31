@@ -1,9 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { UploadCloud, Send, CheckCircle2, ArrowLeft } from "lucide-react";
+import { UploadCloud, Send, CheckCircle2, ArrowLeft, AlertCircle } from "lucide-react";
 import { categories } from "@/data/categories";
+import { createClient } from "@/lib/supabase/client";
+
+function slugify(name: string) {
+  const base = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${base || "app"}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 function UploadZone({ label, hint }: { label: string; hint: string }) {
   return (
@@ -21,11 +32,55 @@ function UploadZone({ label, hint }: { label: string; hint: string }) {
 }
 
 export default function AddAppPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [categorySlug, setCategorySlug] = useState("");
+  const [version, setVersion] = useState("");
+  const [size, setSize] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      setError("يجب تسجيل الدخول أولًا.");
+      return;
+    }
+
+    const shortDescription =
+      description.length > 140 ? `${description.slice(0, 137)}...` : description;
+
+    const { error: insertError } = await supabase.from("apps").insert({
+      slug: slugify(name),
+      name,
+      developer_id: user.id,
+      category_slug: categorySlug,
+      short_description: shortDescription,
+      description,
+      version,
+      size,
+    });
+
+    setLoading(false);
+
+    if (insertError) {
+      setError("تعذر إرسال التطبيق للمراجعة، حاول مرة أخرى.");
+      return;
+    }
+
     setSubmitted(true);
+    router.refresh();
   }
 
   if (submitted) {
@@ -68,6 +123,8 @@ export default function AddAppPage() {
             id="app-name"
             type="text"
             required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             placeholder="مثال: سوق السودان"
             className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
           />
@@ -81,6 +138,8 @@ export default function AddAppPage() {
             id="app-desc"
             required
             rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="اكتب وصفًا مختصرًا وواضحًا عن تطبيقك ووظائفه"
             className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
           />
@@ -94,7 +153,8 @@ export default function AddAppPage() {
             <select
               id="app-category"
               required
-              defaultValue=""
+              value={categorySlug}
+              onChange={(e) => setCategorySlug(e.target.value)}
               className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
             >
               <option value="" disabled>
@@ -116,6 +176,8 @@ export default function AddAppPage() {
               id="app-version"
               type="text"
               required
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
               placeholder="1.0.0"
               className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
             />
@@ -129,6 +191,8 @@ export default function AddAppPage() {
               id="app-size"
               type="text"
               required
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
               placeholder="25 MB"
               className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
             />
@@ -141,12 +205,20 @@ export default function AddAppPage() {
           <UploadZone label="ملف APK" hint="سيتم تفعيل الرفع لاحقًا" />
         </div>
 
+        {error && (
+          <p className="flex items-center gap-1.5 text-xs font-medium text-red-600">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {error}
+          </p>
+        )}
+
         <button
           type="submit"
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark sm:w-auto sm:px-8"
+          disabled={loading}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-60 sm:w-auto sm:px-8"
         >
           <Send className="h-4 w-4" />
-          إرسال للمراجعة
+          {loading ? "جارٍ الإرسال..." : "إرسال للمراجعة"}
         </button>
       </form>
     </div>

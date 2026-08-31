@@ -5,18 +5,23 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Container } from "@/components/ui/Container";
 import { AppCard } from "@/components/ui/AppCard";
 import { CategoryCard } from "@/components/ui/CategoryCard";
-import { categories } from "@/data/categories";
 import {
+  getCategories,
+  getCategoryCounts,
   getFeaturedApps,
   getLatestApps,
   getMostDownloadedApps,
-  getAppsByCategory,
-} from "@/data/apps";
+} from "@/lib/supabase/queries";
 
-export default function HomePage() {
-  const featuredApps = getFeaturedApps();
-  const latestApps = getLatestApps(8);
-  const mostDownloaded = getMostDownloadedApps(8);
+export default async function HomePage() {
+  const [categories, categoryCounts, featuredApps, latestApps, mostDownloaded] =
+    await Promise.all([
+      getCategories(),
+      getCategoryCounts(),
+      getFeaturedApps(8),
+      getLatestApps(8),
+      getMostDownloadedApps(8),
+    ]);
 
   return (
     <>
@@ -57,7 +62,7 @@ export default function HomePage() {
               <CategoryCard
                 key={category.slug}
                 category={category}
-                count={getAppsByCategory(category.slug).length}
+                count={categoryCounts[category.slug] ?? 0}
               />
             ))}
           </div>

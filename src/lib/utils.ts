@@ -24,7 +24,7 @@ export function formatDate(dateString: string): string {
 }
 
 const statusLabels: Record<string, string> = {
-  published: "منشور",
+  approved: "منشور",
   pending: "قيد المراجعة",
   rejected: "مرفوض",
 };

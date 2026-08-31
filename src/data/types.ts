@@ -19,7 +19,7 @@ export interface Category {
   color: string;
 }
 
-export type AppStatus = "published" | "pending" | "rejected";
+export type AppStatus = "pending" | "approved" | "rejected";
 
 export interface AppItem {
   id: string;
