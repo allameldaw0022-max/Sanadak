@@ -73,7 +73,11 @@ export default async function AppsPage({
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
-          <p className="text-sm text-slate-500">لا توجد تطبيقات في هذا التصنيف حاليًا.</p>
+          <p className="text-sm text-slate-500">
+            {activeCategory
+              ? `لا توجد تطبيقات في تصنيف "${activeCategory.name}" حاليًا.`
+              : "لا توجد تطبيقات منشورة حاليًا."}
+          </p>
         </div>
       )}
     </Container>

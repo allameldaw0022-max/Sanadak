@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SearchX } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { SearchBar } from "@/components/ui/SearchBar";
+import { LiveSearchBar } from "@/components/ui/LiveSearchBar";
 import { AppCard } from "@/components/ui/AppCard";
 import { searchApps } from "@/lib/supabase/queries";
 
@@ -24,7 +24,7 @@ export default async function SearchPage({
         <p className="mt-1 text-sm text-slate-500">
           ابحث باسم التطبيق أو اسم المطور أو الوصف
         </p>
-        <SearchBar defaultValue={q} className="mt-6" autoFocus />
+        <LiveSearchBar defaultValue={q} className="mt-6" autoFocus />
       </div>
 
       <div className="mt-10">

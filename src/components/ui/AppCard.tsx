@@ -24,7 +24,7 @@ export function AppCard({ app, className }: { app: AppItem; className?: string }
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <Rating value={app.rating} />
+          <Rating value={app.rating} count={app.ratingCount} />
           <span className="flex shrink-0 items-center gap-1 text-xs text-slate-500">
             <Download className="h-3.5 w-3.5" />
             {formatDownloads(app.downloads)}

@@ -40,6 +40,21 @@ export async function approveAppAction(formData: FormData) {
   revalidateAppPaths(appId);
 }
 
+export async function updateReportAction(formData: FormData) {
+  await requireAdmin();
+  const reportId = formData.get("reportId") as string;
+  const status = formData.get("status") as string;
+  const adminNote = ((formData.get("adminNote") as string | null) || "").trim() || null;
+
+  const supabase = await createClient();
+  await supabase
+    .from("app_reports")
+    .update({ status, admin_note: adminNote })
+    .eq("id", reportId);
+
+  revalidatePath("/admin/reports");
+}
+
 export async function rejectAppAction(formData: FormData) {
   const admin = await requireAdmin();
   const appId = formData.get("appId") as string;

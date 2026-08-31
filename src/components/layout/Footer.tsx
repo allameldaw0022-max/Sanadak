@@ -55,10 +55,16 @@ export function Footer() {
       </Container>
 
       <div className="border-t border-slate-100 py-5">
-        <Container>
-          <p className="text-center text-xs text-slate-400">
+        <Container className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+          <p className="text-xs text-slate-400">
             © {new Date().getFullYear()} سندك. جميع الحقوق محفوظة.
           </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+            <Link href="/privacy" className="hover:text-primary">الخصوصية</Link>
+            <Link href="/terms" className="hover:text-primary">شروط الاستخدام</Link>
+            <Link href="/developer-terms" className="hover:text-primary">شروط المطورين</Link>
+            <Link href="/report" className="hover:text-primary">الإبلاغ عن تطبيق</Link>
+          </div>
         </Container>
       </div>
     </footer>

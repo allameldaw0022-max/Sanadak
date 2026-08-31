@@ -6,6 +6,7 @@ type AppRow = {
   id: string;
   slug: string;
   name: string;
+  developer_id: string;
   category_slug: string;
   short_description: string;
   description: string;
@@ -33,6 +34,7 @@ function mapApp(row: AppRow): AppItem {
     slug: row.slug,
     name: row.name,
     developer: developer?.full_name || "مطور سندك",
+    developerId: row.developer_id,
     categorySlug: row.category_slug as CategorySlug,
     shortDescription: row.short_description,
     description: row.description,
@@ -216,16 +218,27 @@ export async function getPendingApps(): Promise<AppItem[]> {
 }
 
 export async function searchApps(query: string): Promise<AppItem[]> {
-  const q = query.trim();
+  const q = query.trim().toLowerCase();
   if (!q) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("apps")
     .select(APP_SELECT)
-    .eq("status", "approved")
-    .or(`name.ilike.%${q}%,short_description.ilike.%${q}%`)
-    .limit(30);
-  return (data ?? []).map((row) => mapApp(row as AppRow));
+    .eq("status", "approved");
+
+  const apps = (data ?? []).map((row) => mapApp(row as AppRow));
+
+  return apps
+    .filter((app) => {
+      const category = getStaticCategoryBySlug(app.categorySlug);
+      return (
+        app.name.toLowerCase().includes(q) ||
+        app.developer.toLowerCase().includes(q) ||
+        app.shortDescription.toLowerCase().includes(q) ||
+        (category?.name.toLowerCase().includes(q) ?? false)
+      );
+    })
+    .slice(0, 30);
 }
 
 // ---------------------------------------------------------------------------
@@ -482,6 +495,149 @@ export async function getAdminDownloads(limit = 200): Promise<AdminDownload[]> {
       appName: app?.name ?? "—",
       appIconColor: app?.icon_color ?? "#16A34A",
       downloadedAt: row.downloaded_at,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+export type AppReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  userId: string;
+  userName: string;
+};
+
+type ReviewRow = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  user_id: string;
+  reviewer: { full_name: string | null } | { full_name: string | null }[] | null;
+};
+
+export async function getAppReviews(appId: string): Promise<AppReview[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, created_at, user_id, reviewer:profiles!reviews_user_id_fkey(full_name)")
+    .eq("app_id", appId)
+    .order("created_at", { ascending: false });
+
+  return ((data ?? []) as ReviewRow[]).map((row) => {
+    const reviewer = Array.isArray(row.reviewer) ? row.reviewer[0] : row.reviewer;
+    return {
+      id: row.id,
+      rating: row.rating,
+      comment: row.comment,
+      createdAt: row.created_at,
+      userId: row.user_id,
+      userName: reviewer?.full_name || "مستخدم سندك",
+    };
+  });
+}
+
+export async function getMyReviewForApp(appId: string, userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("reviews")
+    .select("id, rating, comment")
+    .eq("app_id", appId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Developer profile (public)
+// ---------------------------------------------------------------------------
+
+export type DeveloperProfile = {
+  id: string;
+  fullName: string;
+  totalApps: number;
+  totalDownloads: number;
+};
+
+export async function getDeveloperProfile(developerId: string): Promise<DeveloperProfile | undefined> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .eq("id", developerId)
+    .maybeSingle();
+
+  if (!profile) return undefined;
+
+  const { data: apps } = await supabase
+    .from("apps")
+    .select("downloads_count")
+    .eq("developer_id", developerId)
+    .eq("status", "approved");
+
+  return {
+    id: profile.id,
+    fullName: profile.full_name || "مطور سندك",
+    totalApps: apps?.length ?? 0,
+    totalDownloads: (apps ?? []).reduce((sum, a) => sum + a.downloads_count, 0),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// App reports
+// ---------------------------------------------------------------------------
+
+export type AdminReport = {
+  id: string;
+  appId: string;
+  appName: string;
+  reason: string;
+  details: string | null;
+  status: string;
+  adminNote: string | null;
+  reporterEmail: string | null;
+  createdAt: string;
+};
+
+type AdminReportRow = {
+  id: string;
+  app_id: string;
+  reason: string;
+  details: string | null;
+  status: string;
+  admin_note: string | null;
+  created_at: string;
+  app: { name: string } | { name: string }[] | null;
+  reporter: { email: string | null } | { email: string | null }[] | null;
+};
+
+export async function getAdminReports(): Promise<AdminReport[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("app_reports")
+    .select(
+      "id, app_id, reason, details, status, admin_note, created_at, app:apps(name), reporter:profiles(email)"
+    )
+    .order("created_at", { ascending: false });
+
+  return ((data ?? []) as AdminReportRow[]).map((row) => {
+    const app = Array.isArray(row.app) ? row.app[0] : row.app;
+    const reporter = Array.isArray(row.reporter) ? row.reporter[0] : row.reporter;
+    return {
+      id: row.id,
+      appId: row.app_id,
+      appName: app?.name ?? "—",
+      reason: row.reason,
+      details: row.details,
+      status: row.status,
+      adminNote: row.admin_note,
+      reporterEmail: reporter?.email ?? null,
+      createdAt: row.created_at,
     };
   });
 }

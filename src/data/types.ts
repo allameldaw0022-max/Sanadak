@@ -26,6 +26,7 @@ export interface AppItem {
   slug: string;
   name: string;
   developer: string;
+  developerId: string;
   categorySlug: CategorySlug;
   shortDescription: string;
   description: string;
