@@ -1,131 +1,125 @@
 import type { Metadata } from "next";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
-import { Container } from "@/components/ui/Container";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { StatusBadge } from "@/components/ui/Badge";
-import { getAllAppsAdmin } from "@/lib/supabase/queries";
-import { getCategoryBySlug } from "@/data/categories";
-import { formatDate } from "@/lib/utils";
-import { approveAppAction, rejectAppAction } from "@/app/admin/actions";
+import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
+import { getAdminApps } from "@/lib/supabase/queries";
+import { formatDate, formatDownloads, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "مراجعة التطبيقات | سندك",
+  title: "إدارة التطبيقات | سندك",
 };
 
-export default async function AdminAppsPage() {
-  const apps = await getAllAppsAdmin();
-  const pending = apps.filter((a) => a.status === "pending");
-  const reviewed = apps.filter((a) => a.status !== "pending");
+const statusTabs = [
+  { value: "all", label: "الكل" },
+  { value: "pending", label: "قيد المراجعة" },
+  { value: "approved", label: "معتمد" },
+  { value: "rejected", label: "مرفوض" },
+] as const;
+
+export default async function AdminAppsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; q?: string }>;
+}) {
+  const { status = "all", q = "" } = await searchParams;
+  const apps = await getAdminApps();
+
+  const query = q.trim().toLowerCase();
+  const filtered = apps.filter((app) => {
+    const matchesStatus = status === "all" || app.status === status;
+    const matchesQuery =
+      !query ||
+      app.name.toLowerCase().includes(query) ||
+      app.developerName.toLowerCase().includes(query);
+    return matchesStatus && matchesQuery;
+  });
 
   return (
-    <Container className="py-8 sm:py-12">
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-navy sm:text-3xl">مراجعة التطبيقات</h1>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-extrabold text-navy">إدارة التطبيقات</h1>
         <p className="mt-1 text-sm text-slate-500">
-          راجع التطبيقات المرسلة من المطورين، واعتمدها أو ارفضها
+          راجع كل التطبيقات المرسلة على سندك، واعتمدها أو ارفضها
         </p>
       </div>
 
-      <section className="mb-12">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-navy">
-          <Clock className="h-5 w-5 text-amber-600" />
-          قيد المراجعة ({pending.length})
-        </h2>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          {statusTabs.map((tab) => (
+            <Link
+              key={tab.value}
+              href={`/admin/apps?status=${tab.value}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+              className={cn(
+                "flex shrink-0 items-center rounded-full px-4 py-2 text-xs font-semibold transition-colors",
+                status === tab.value
+                  ? "bg-primary text-white"
+                  : "border border-slate-200 bg-white text-slate-600"
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+        <div className="sm:w-72">
+          <AdminSearchInput placeholder="ابحث باسم التطبيق أو المطور..." />
+        </div>
+      </div>
 
-        {pending.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center">
-            <p className="text-sm text-slate-500">لا توجد تطبيقات قيد المراجعة حاليًا.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {pending.map((app) => {
-              const category = getCategoryBySlug(app.categorySlug);
-              return (
-                <div
-                  key={app.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-start gap-4">
-                    <AppIcon name={app.name} color={app.iconColor} size="sm" />
-                    <div>
-                      <p className="font-bold text-navy">{app.name}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{app.developer}</p>
-                      <p className="mt-1 max-w-md text-xs leading-relaxed text-slate-500">
-                        {app.shortDescription}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                          {category?.name ?? "—"}
-                        </span>
-                        <span>الإصدار {app.version}</span>
-                        <span>{formatDate(app.lastUpdate)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 gap-2">
-                    <form action={approveAppAction}>
-                      <input type="hidden" name="appId" value={app.id} />
-                      <button
-                        type="submit"
-                        className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        اعتماد
-                      </button>
-                    </form>
-                    <form action={rejectAppAction}>
-                      <input type="hidden" name="appId" value={app.id} />
-                      <button
-                        type="submit"
-                        className="flex h-10 items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        رفض
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="mb-4 text-lg font-bold text-navy">كل التطبيقات ({reviewed.length})</h2>
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center">
+          <p className="text-sm text-slate-500">لا توجد تطبيقات مطابقة.</p>
+        </div>
+      ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-right text-sm">
+            <table className="w-full min-w-[760px] text-right text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500">
                   <th className="px-5 py-3 font-semibold">التطبيق</th>
                   <th className="px-5 py-3 font-semibold">المطور</th>
+                  <th className="px-5 py-3 font-semibold">التصنيف</th>
+                  <th className="px-5 py-3 font-semibold">الإصدار</th>
+                  <th className="px-5 py-3 font-semibold">التحميلات</th>
                   <th className="px-5 py-3 font-semibold">الحالة</th>
-                  <th className="px-5 py-3 font-semibold">آخر تحديث</th>
+                  <th className="px-5 py-3 font-semibold">تاريخ الإضافة</th>
+                  <th className="px-5 py-3"></th>
                 </tr>
               </thead>
               <tbody>
-                {reviewed.map((app) => (
-                  <tr key={app.id} className="border-b border-slate-50 last:border-0">
+                {filtered.map((app) => (
+                  <tr key={app.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <AppIcon name={app.name} color={app.iconColor} size="sm" />
                         <span className="font-semibold text-navy">{app.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-slate-600">{app.developer}</td>
+                    <td className="px-5 py-3 text-slate-600">{app.developerName}</td>
+                    <td className="px-5 py-3 text-slate-600">{app.categoryName}</td>
+                    <td className="px-5 py-3 text-slate-600">{app.version}</td>
+                    <td className="px-5 py-3 text-slate-600">{formatDownloads(app.downloadsCount)}</td>
                     <td className="px-5 py-3">
                       <StatusBadge status={app.status} />
                     </td>
-                    <td className="px-5 py-3 text-slate-500">{formatDate(app.lastUpdate)}</td>
+                    <td className="px-5 py-3 text-slate-500">{formatDate(app.createdAt)}</td>
+                    <td className="px-5 py-3">
+                      <Link
+                        href={`/admin/apps/${app.id}`}
+                        className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark"
+                      >
+                        مراجعة
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      </section>
-    </Container>
+      )}
+    </div>
   );
 }

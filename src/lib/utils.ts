@@ -23,6 +23,17 @@ export function formatDate(dateString: string): string {
   }).format(date);
 }
 
+export function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("ar-SD", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 const statusLabels: Record<string, string> = {
   approved: "منشور",
   pending: "قيد المراجعة",

@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
-import { Container } from "@/components/ui/Container";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { getCurrentUser } from "@/lib/supabase/queries";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -13,20 +12,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (user.role !== "admin") redirect("/");
 
   return (
-    <div>
-      <div className="border-b border-slate-200 bg-navy">
-        <Container className="flex h-14 items-center gap-2 text-white">
-          <ShieldCheck className="h-5 w-5" />
-          <span className="text-sm font-bold">لوحة مراجعة سندك</span>
-          <Link
-            href="/admin/apps"
-            className="mr-auto text-sm font-semibold text-slate-300 hover:text-white"
-          >
-            مراجعة التطبيقات
-          </Link>
-        </Container>
+    <div className="flex min-h-[calc(100vh-64px)] flex-col md:flex-row">
+      <AdminSidebar adminName={user.fullName || "مشرف سندك"} adminEmail={user.email || ""} />
+      <div className="min-w-0 flex-1">
+        <AdminTopbar />
+        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-10">{children}</div>
       </div>
-      {children}
     </div>
   );
 }
