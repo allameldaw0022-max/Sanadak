@@ -18,6 +18,7 @@ type AppRow = {
   screenshots_count: number;
   downloads_count: number;
   updated_at: string;
+  apk_path: string | null;
   developer: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
@@ -43,6 +44,7 @@ function mapApp(row: AppRow): AppItem {
     iconColor: row.icon_color,
     featured: row.featured,
     screenshotsCount: row.screenshots_count,
+    apkPath: row.apk_path,
     status: row.status as AppItem["status"],
   };
 }

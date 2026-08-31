@@ -39,6 +39,7 @@ export interface AppItem {
   featured: boolean;
   screenshotsCount: number;
   status: AppStatus;
+  apkPath: string | null;
 }
 
 export interface DeveloperApp {

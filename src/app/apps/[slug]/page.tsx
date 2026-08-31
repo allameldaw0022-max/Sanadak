@@ -67,7 +67,7 @@ export default async function AppDetailsPage({
         </div>
 
         <div className="w-full shrink-0 lg:w-72">
-          <DownloadButton appId={app.id} />
+          <DownloadButton appId={app.id} apkPath={app.apkPath} />
           <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-center">
             <div>
               <p className="text-xs text-slate-500">الإصدار</p>

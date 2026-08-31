@@ -50,6 +50,7 @@ export type Database = {
       }
       apps: {
         Row: {
+          apk_path: string | null
           category_slug: string
           created_at: string
           description: string
@@ -73,6 +74,7 @@ export type Database = {
           version: string
         }
         Insert: {
+          apk_path?: string | null
           category_slug: string
           created_at?: string
           description: string
@@ -96,6 +98,7 @@ export type Database = {
           version?: string
         }
         Update: {
+          apk_path?: string | null
           category_slug?: string
           created_at?: string
           description?: string
