@@ -26,7 +26,10 @@ export default function DeveloperRegisterPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, role: "developer" } },
+      options: {
+        data: { full_name: fullName, role: "developer" },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
 
     setLoading(false);
