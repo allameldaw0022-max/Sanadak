@@ -27,30 +27,30 @@ export default async function HomePage() {
     <>
       <HeroSection />
 
-      <Container className="space-y-14 py-12 sm:py-16">
+      <Container className="space-y-12 py-8 sm:py-12">
         <section>
           <SectionHeader title="تطبيقات مميزة" href="/apps" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
             {featuredApps.map((app) => (
-              <AppCard key={app.id} app={app} />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader title="أحدث التطبيقات" href="/apps" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {latestApps.map((app) => (
-              <AppCard key={app.id} app={app} />
+              <AppCard key={app.id} app={app} className="w-44 shrink-0 sm:w-48 md:w-auto" />
             ))}
           </div>
         </section>
 
         <section>
           <SectionHeader title="الأكثر تحميلًا" href="/apps" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
             {mostDownloaded.map((app) => (
-              <AppCard key={app.id} app={app} />
+              <AppCard key={app.id} app={app} className="w-44 shrink-0 sm:w-48 md:w-auto" />
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeader title="أحدث التطبيقات" href="/apps" />
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+            {latestApps.map((app) => (
+              <AppCard key={app.id} app={app} className="w-44 shrink-0 sm:w-48 md:w-auto" />
             ))}
           </div>
         </section>

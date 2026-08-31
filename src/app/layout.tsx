@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { getCurrentUser } from "@/lib/supabase/queries";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -16,14 +17,23 @@ export const metadata: Metadata = {
   description: "اكتشف التطبيقات السودانية وحمّلها بسهولة من مكان واحد.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const user = await getCurrentUser();
+  const accountHref = !user
+    ? "/login"
+    : user.role === "admin"
+      ? "/admin"
+      : user.role === "developer"
+        ? "/developer/dashboard"
+        : "/account";
+
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-bg text-navy">
         <Header />
         <main className="flex-1 pb-20 md:pb-0">{children}</main>
         <Footer />
-        <MobileNav />
+        <MobileNav accountHref={accountHref} />
       </body>
     </html>
   );

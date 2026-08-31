@@ -9,7 +9,7 @@ import { Screenshot } from "@/components/ui/Screenshot";
 import { AppCard } from "@/components/ui/AppCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getAppBySlug, getCategoryBySlug, getSimilarApps } from "@/lib/supabase/queries";
-import { formatDate, formatDownloads } from "@/lib/utils";
+import { formatDate, formatDownloads, formatShortDate } from "@/lib/utils";
 
 export async function generateMetadata({
   params,
@@ -68,27 +68,33 @@ export default async function AppDetailsPage({
 
         <div className="w-full shrink-0 lg:w-72">
           <DownloadButton appId={app.id} apkPath={app.apkPath} />
-          <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-center">
+          <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center">
             <div>
-              <p className="text-xs text-slate-500">الإصدار</p>
+              <p className="text-[11px] text-slate-500">الإصدار</p>
               <p className="mt-1 text-sm font-bold text-navy">{app.version}</p>
             </div>
-            <div>
-              <p className="text-xs text-slate-500">الحجم</p>
+            <div className="border-x border-slate-100">
+              <p className="text-[11px] text-slate-500">الحجم</p>
               <p className="mt-1 text-sm font-bold text-navy">{app.size}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-500">آخر تحديث</p>
+              <p className="mt-1 text-sm font-bold text-navy">{formatShortDate(app.lastUpdate)}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-10">
-        <h2 className="mb-4 text-lg font-bold text-navy">صور من التطبيق</h2>
-        <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
-          {Array.from({ length: app.screenshotsCount }).map((_, i) => (
-            <Screenshot key={i} color={app.iconColor} index={i + 1} />
-          ))}
+      {app.screenshotsCount > 0 && (
+        <div className="mt-10">
+          <h2 className="mb-4 text-lg font-bold text-navy">صور من التطبيق</h2>
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+            {Array.from({ length: app.screenshotsCount }).map((_, i) => (
+              <Screenshot key={i} color={app.iconColor} index={i + 1} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -115,9 +121,13 @@ export default async function AppDetailsPage({
       {similarApps.length > 0 && (
         <div className="mt-14">
           <SectionHeader title="تطبيقات مشابهة" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
             {similarApps.map((similarApp) => (
-              <AppCard key={similarApp.id} app={similarApp} />
+              <AppCard
+                key={similarApp.id}
+                app={similarApp}
+                className="w-44 shrink-0 sm:w-48 md:w-auto"
+              />
             ))}
           </div>
         </div>

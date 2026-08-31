@@ -2,19 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Search, Grid3x3, UserRound } from "lucide-react";
+import { Home, LayoutGrid, Grid3x3, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const items = [
-  { href: "/", label: "الرئيسية", icon: Home },
-  { href: "/apps", label: "التطبيقات", icon: LayoutGrid },
-  { href: "/search", label: "بحث", icon: Search },
-  { href: "/categories", label: "التصنيفات", icon: Grid3x3 },
-  { href: "/developer/register", label: "المطورين", icon: UserRound },
-];
-
-export function MobileNav() {
+export function MobileNav({ accountHref }: { accountHref: string }) {
   const pathname = usePathname();
+
+  const items = [
+    { href: "/", label: "الرئيسية", icon: Home },
+    { href: "/apps", label: "التطبيقات", icon: LayoutGrid },
+    { href: "/categories", label: "التصنيفات", icon: Grid3x3 },
+    { href: accountHref, label: "حسابي", icon: UserRound },
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">

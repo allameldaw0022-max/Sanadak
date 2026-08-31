@@ -23,6 +23,15 @@ export function formatDate(dateString: string): string {
   }).format(date);
 }
 
+export function formatShortDate(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("ar-SD", {
+    day: "numeric",
+    month: "numeric",
+    year: "2-digit",
+  }).format(date);
+}
+
 export function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("ar-SD", {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { getCurrentUser } from "@/lib/supabase/queries";
 import { signOutAction } from "@/app/auth/actions";
 
@@ -15,7 +16,7 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-sm">
-      <Container className="flex h-16 items-center justify-between gap-4">
+      <Container className="flex h-16 items-center gap-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base font-extrabold text-white">
             س
@@ -23,7 +24,7 @@ export async function Header() {
           <span className="text-lg font-extrabold text-navy">سندك</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden shrink-0 items-center gap-6 lg:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -35,7 +36,11 @@ export async function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="hidden max-w-md flex-1 md:block">
+          <SearchBar />
+        </div>
+
+        <div className="ms-auto flex items-center gap-2">
           <Link
             href="/search"
             aria-label="بحث"
@@ -82,9 +87,12 @@ export async function Header() {
                   المراجعة
                 </Link>
               )}
-              <span className="hidden max-w-[10rem] truncate text-sm font-semibold text-slate-600 md:inline">
+              <Link
+                href="/account"
+                className="hidden max-w-[10rem] truncate text-sm font-semibold text-slate-600 transition-colors hover:text-primary md:inline"
+              >
                 {user.fullName || user.email}
-              </span>
+              </Link>
               <form action={signOutAction}>
                 <button
                   type="submit"
