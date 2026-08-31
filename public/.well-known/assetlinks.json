@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sd.sanadak.app",
+      "sha256_cert_fingerprints": [
+        "5D:E2:FF:6D:DA:26:15:F2:CD:37:9F:27:57:7C:CB:29:DA:09:95:0A:A7:6B:84:89:B3:30:4C:62:74:7C:84:B9"
+      ]
+    }
+  }
+]

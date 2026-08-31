@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Cairo } from "next/font/google";
 import "./globals.css";
@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: `${SITE_NAME} | متجر تطبيقات سوداني`,
   description: defaultDescription,
+  manifest: "/manifest.webmanifest",
   openGraph: {
     siteName: SITE_NAME,
     type: "website",
@@ -27,6 +28,10 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} | متجر تطبيقات سوداني`,
     description: defaultDescription,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#16a34a",
 };
 
 async function AccountAwareMobileNav() {
