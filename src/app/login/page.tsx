@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import { LogIn, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/client";
+import { describeSignInError, describeSignUpError } from "@/lib/authErrors";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -32,7 +33,7 @@ export default function LoginPage() {
       });
       setLoading(false);
       if (signInError) {
-        setError("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+        setError(describeSignInError(signInError));
         return;
       }
       router.push("/");
@@ -48,9 +49,7 @@ export default function LoginPage() {
       });
       setLoading(false);
       if (signUpError) {
-        setError(signUpError.message.includes("already registered")
-          ? "هذا البريد الإلكتروني مسجل بالفعل."
-          : "تعذر إنشاء الحساب، حاول مرة أخرى.");
+        setError(describeSignUpError(signUpError));
         return;
       }
       if (!data.session) {

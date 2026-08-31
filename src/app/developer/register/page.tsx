@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/client";
+import { describeSignUpError } from "@/lib/authErrors";
 
 const steps = [
   { icon: UploadCloud, title: "ارفع تطبيقك", text: "أدخل بيانات تطبيقك وارفع ملف APK من لوحة التحكم." },
@@ -51,11 +52,7 @@ export default function DeveloperRegisterPage() {
     setLoading(false);
 
     if (signUpError) {
-      setError(
-        signUpError.message.includes("already registered")
-          ? "هذا البريد الإلكتروني مسجل بالفعل."
-          : "تعذر إنشاء الحساب، حاول مرة أخرى."
-      );
+      setError(describeSignUpError(signUpError));
       return;
     }
 
