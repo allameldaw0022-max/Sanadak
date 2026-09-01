@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalPage } from "@/components/ui/LegalPage";
 
 export const metadata: Metadata = {
@@ -37,11 +38,11 @@ export default function TermsPage() {
       <div>
         <h2>الإبلاغ عن مشكلة</h2>
         <p>
-          إذا واجهت تطبيقًا يبدو ضارًا أو مخالفًا، يمكنك الإبلاغ عنه مباشرة من صفحة التطبيق أو من
-          صفحة{" "}
-          <a href="/report" className="font-semibold text-primary hover:text-primary-dark">
-            الإبلاغ عن تطبيق
-          </a>
+          إذا كان جهازك مفقودًا أو مسروقًا، أو واجهت خللًا في بيانات جهاز مسجّل، يمكنك تقديم بلاغ
+          مباشرة من صفحة{" "}
+          <Link href="/devices" className="font-semibold text-primary hover:text-primary-dark">
+            أجهزتي
+          </Link>
           .
         </p>
       </div>

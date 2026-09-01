@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -174,13 +173,6 @@ export default function LoginPage() {
             </button>
           </form>
         )}
-
-        <p className="mt-6 text-center text-sm text-slate-500">
-          مطور ولا تملك حسابًا؟{" "}
-          <Link href="/developer/register" className="font-semibold text-primary hover:text-primary-dark">
-            سجل كمطور
-          </Link>
-        </p>
       </div>
     </Container>
   );

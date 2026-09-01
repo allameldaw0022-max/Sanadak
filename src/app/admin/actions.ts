@@ -16,45 +16,6 @@ async function requireAdmin() {
   return user;
 }
 
-function revalidateAppPaths(appId: string) {
-  revalidatePath("/admin");
-  revalidatePath("/admin/apps");
-  revalidatePath(`/admin/apps/${appId}`);
-}
-
-export async function approveAppAction(formData: FormData) {
-  const admin = await requireAdmin();
-  const appId = formData.get("appId") as string;
-
-  const supabase = await createClient();
-  await supabase
-    .from("apps")
-    .update({
-      status: "approved",
-      reviewed_by: admin.id,
-      reviewed_at: new Date().toISOString(),
-      rejection_reason: null,
-    })
-    .eq("id", appId);
-
-  revalidateAppPaths(appId);
-}
-
-export async function updateReportAction(formData: FormData) {
-  await requireAdmin();
-  const reportId = formData.get("reportId") as string;
-  const status = formData.get("status") as string;
-  const adminNote = ((formData.get("adminNote") as string | null) || "").trim() || null;
-
-  const supabase = await createClient();
-  await supabase
-    .from("app_reports")
-    .update({ status, admin_note: adminNote })
-    .eq("id", reportId);
-
-  revalidatePath("/admin/reports");
-}
-
 export async function setDealerStatusAction(formData: FormData) {
   await requireAdmin();
   const userId = formData.get("userId") as string;
@@ -64,27 +25,4 @@ export async function setDealerStatusAction(formData: FormData) {
   await supabase.from("profiles").update({ is_dealer: isDealer }).eq("id", userId);
 
   revalidatePath("/admin/users");
-}
-
-export async function rejectAppAction(formData: FormData) {
-  const admin = await requireAdmin();
-  const appId = formData.get("appId") as string;
-  const reason = (formData.get("reason") as string | null)?.trim();
-
-  if (!reason) {
-    throw new Error("سبب الرفض مطلوب.");
-  }
-
-  const supabase = await createClient();
-  await supabase
-    .from("apps")
-    .update({
-      status: "rejected",
-      rejection_reason: reason,
-      reviewed_by: admin.id,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", appId);
-
-  revalidateAppPaths(appId);
 }

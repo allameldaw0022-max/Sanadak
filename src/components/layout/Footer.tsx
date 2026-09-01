@@ -62,8 +62,6 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
             <Link href="/privacy" className="hover:text-primary">الخصوصية</Link>
             <Link href="/terms" className="hover:text-primary">شروط الاستخدام</Link>
-            <Link href="/developer-terms" className="hover:text-primary">شروط المطورين</Link>
-            <Link href="/report" className="hover:text-primary">الإبلاغ عن تطبيق</Link>
           </div>
         </Container>
       </div>

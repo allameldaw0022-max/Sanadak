@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LogOut, LayoutDashboard, ShieldCheck, Smartphone } from "lucide-react";
+import { LogOut, ShieldCheck, Smartphone } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { getCurrentUser } from "@/lib/supabase/queries";
 import { signOutAction } from "@/app/auth/actions";
@@ -42,15 +42,6 @@ async function HeaderAuthActions() {
         <Smartphone className="h-4 w-4" />
         أجهزتي
       </Link>
-      {user.role === "developer" && (
-        <Link
-          href="/developer/dashboard"
-          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-navy transition-colors hover:bg-slate-50 sm:flex"
-        >
-          <LayoutDashboard className="h-4 w-4" />
-          لوحة التحكم
-        </Link>
-      )}
       {user.role === "admin" && (
         <Link
           href="/admin"

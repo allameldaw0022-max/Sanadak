@@ -3,9 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   LogOut,
-  LayoutDashboard,
   ShieldCheck,
-  UserPlus,
   Smartphone,
   Bell,
   BadgeCheck,
@@ -117,15 +115,6 @@ export default async function AccountPage() {
             </Link>
           )}
 
-          {user.role === "developer" && (
-            <Link
-              href="/developer/dashboard"
-              className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              لوحة تحكم المطور
-            </Link>
-          )}
           {user.role === "admin" && (
             <Link
               href="/admin"
@@ -133,15 +122,6 @@ export default async function AccountPage() {
             >
               <ShieldCheck className="h-4 w-4" />
               لوحة الإدارة
-            </Link>
-          )}
-          {user.role === "user" && (
-            <Link
-              href="/developer/register"
-              className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
-            >
-              <UserPlus className="h-4 w-4" />
-              سجل كمطور
             </Link>
           )}
 

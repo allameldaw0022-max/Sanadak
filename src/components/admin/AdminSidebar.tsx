@@ -5,11 +5,6 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, Bell, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Sanadak-focused admin nav. The old app-store admin pages
-// (/admin/apps, /admin/developers, /admin/downloads, /admin/reports,
-// /admin/payments, /admin/settings, /admin/security) still exist and work
-// unchanged -- they're just no longer the primary nav, reachable via the
-// "لوحة المتجر القديم" link below instead.
 const links = [
   { href: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
   { href: "/admin/devices", label: "الأجهزة", icon: Smartphone },
@@ -51,16 +46,6 @@ export function AdminSidebar({ adminName, adminEmail }: { adminName: string; adm
           );
         })}
       </nav>
-
-      <div className="border-t border-slate-100 p-4">
-        <Link
-          href="/admin/apps"
-          className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-50"
-        >
-          <LayoutDashboard className="h-5 w-5" />
-          لوحة المتجر القديم
-        </Link>
-      </div>
     </aside>
   );
 }

@@ -36,13 +36,7 @@ export const viewport: Viewport = {
 
 async function AccountAwareMobileNav() {
   const user = await getCurrentUser();
-  const accountHref = !user
-    ? "/login"
-    : user.role === "admin"
-      ? "/admin"
-      : user.role === "developer"
-        ? "/developer/dashboard"
-        : "/account";
+  const accountHref = !user ? "/login" : user.role === "admin" ? "/admin" : "/account";
 
   return <MobileNav accountHref={accountHref} />;
 }
