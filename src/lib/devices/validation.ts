@@ -1,4 +1,4 @@
-import { isValidImei, normalizeImei } from "./imei";
+import { isValidImei, normalizeImei } from "./imei-format";
 
 export type DeviceRegistrationInput = {
   brand: string;

@@ -3,37 +3,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // No explicit "server-only" import here (that package throws unconditionally
 // outside a Next.js webpack build, which breaks vitest): the node:crypto
 // import already makes this module unbundleable into a Client Component, the
-// same boundary src/lib/security/hash.ts relies on.
-
-// GSMA TS.06 Luhn checksum for a normalized 15-digit IMEI.
-export function isValidImeiLuhn(imei: string): boolean {
-  if (!/^[0-9]{15}$/.test(imei)) return false;
-
-  let total = 0;
-  let doubleIt = false;
-  for (let i = imei.length - 1; i >= 0; i--) {
-    let digit = Number(imei[i]);
-    if (doubleIt) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
-    }
-    total += digit;
-    doubleIt = !doubleIt;
-  }
-  return total % 10 === 0;
-}
-
-// Strips everything but digits (spaces, dashes, "IMEI:" prefixes users paste
-// in) before any format/Luhn/uniqueness check ever runs, so the same number
-// typed two different ways is always treated as the same IMEI.
-export function normalizeImei(raw: string): string {
-  return raw.replace(/[^0-9]/g, "");
-}
-
-export function isValidImei(raw: string): boolean {
-  const normalized = normalizeImei(raw);
-  return normalized.length === 15 && isValidImeiLuhn(normalized);
-}
+// same boundary src/lib/security/hash.ts relies on. Kept in its own file,
+// separate from the pure format helpers in imei-format.ts, so nothing that
+// legitimately needs client-safe IMEI validation ever has a reason to import
+// a module that touches IMEI_HASH_SECRET.
 
 // HMAC-SHA256 with a server-only secret, NOT plain SHA-256: without a
 // secret pepper, an attacker could precompute every Luhn-valid 15-digit
@@ -41,6 +14,18 @@ export function isValidImei(raw: string): boolean {
 // hash back to its raw IMEI. imei_hash exists specifically so device_id/IMEI
 // can be referenced safely in less-tightly-scoped places (logs, audit
 // events) without storing the raw number there -- it must stay unreversible.
+//
+// IMEI_HASH_SECRET is a data-shape secret, not just an access secret: every
+// stored device_imeis.imei_hash was computed with the CURRENT value of this
+// variable. Rotating it later does not merely require re-authenticating
+// something -- it silently makes every previously-stored hash unfindable by
+// public_check_device_status, since a new secret produces different HMAC
+// output for the same IMEI. There is no rotation/versioning support in this
+// phase (adding one now would be speculative complexity ahead of any real
+// need) -- so once this value is set in production, treat it as effectively
+// permanent. If it must ever change, that requires a deliberate, planned
+// migration that recomputes and rewrites every device_imeis.imei_hash row
+// with the new secret first -- never a bare env var swap.
 export function hashImei(normalizedImei: string): string {
   const secret = process.env.IMEI_HASH_SECRET;
   if (!secret) {

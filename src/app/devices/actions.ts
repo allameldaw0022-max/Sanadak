@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, applyProgressiveDelay, RATE_LIMITS } from "@/lib/security/rate-limit";
 import { logSecurityEvent } from "@/lib/security/audit";
-import { hashImei, isValidImei, normalizeImei } from "@/lib/devices/imei";
+import { isValidImei, normalizeImei } from "@/lib/devices/imei-format";
+import { hashImei } from "@/lib/devices/imei-hash";
 import { validateDeviceRegistrationInput, type DeviceRegistrationInput } from "@/lib/devices/validation";
 import { buildImeiCheckDisclosure, type ImeiCheckDisclosure } from "@/lib/devices/check-response";
 
