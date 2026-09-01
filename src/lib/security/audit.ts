@@ -39,7 +39,11 @@ export type SecurityEventType =
   | "certificate_issued"
   | "certificate_issue_failed"
   | "batch_imei_check"
-  | "batch_imei_check_rate_limited";
+  | "batch_imei_check_rate_limited"
+  | "subscription_request_submitted"
+  | "subscription_request_failed"
+  | "subscription_request_rate_limited"
+  | "subscription_request_reviewed";
 
 // Append-only audit trail. Never pass password/secret values in metadata —
 // callers must only pass non-sensitive, already-computed scan/report data.

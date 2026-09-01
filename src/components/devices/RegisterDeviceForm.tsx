@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Smartphone } from "lucide-react";
 import { registerDeviceAction } from "@/app/devices/actions";
 import { isValidImei, normalizeImei } from "@/lib/devices/imei-format";
+import { LimitReachedNotice } from "@/components/devices/LimitReachedNotice";
 
 // Fast, non-authoritative client-side format check using imei-format.ts
 // ONLY (normalize/length/digits/Luhn) -- no HMAC, no secret, nothing from
@@ -27,11 +28,13 @@ export function RegisterDeviceForm() {
   const [imei1, setImei1] = useState("");
   const [imei2, setImei2] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [limitNotice, setLimitNotice] = useState<{ message: string; ctaLabel: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setLimitNotice(null);
 
     if (!brand.trim()) {
       setError("الرجاء إدخال ماركة الجهاز.");
@@ -73,7 +76,11 @@ export function RegisterDeviceForm() {
       });
 
       if (!result.ok) {
-        setError(result.error);
+        if (result.limitReached && result.ctaLabel) {
+          setLimitNotice({ message: result.error, ctaLabel: result.ctaLabel });
+        } else {
+          setError(result.error);
+        }
         return;
       }
 
@@ -167,6 +174,8 @@ export function RegisterDeviceForm() {
           {error}
         </p>
       )}
+
+      {limitNotice && <LimitReachedNotice message={limitNotice.message} ctaLabel={limitNotice.ctaLabel} />}
 
       <button
         type="submit"

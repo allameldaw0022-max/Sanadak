@@ -946,6 +946,343 @@ export async function getAdminNotifications(): Promise<AdminNotificationItem[]> 
   }));
 }
 
+// --- Dealer subscriptions: plan catalog, payment methods, request/status
+// queries. Plans/payment methods are read via RLS's own dealer-or-admin /
+// active-only gating (subscription_plans_select_active_or_admin,
+// payment_methods_select_dealer_or_admin) -- nothing here widens what those
+// policies already allow. Payment proof/logo paths are only ever turned
+// into short-lived signed URLs (private buckets), same pattern already
+// used for ownership/report evidence.
+
+export type SubscriptionPlanItem = {
+  id: string;
+  name: string;
+  monthlyPriceSdg: number;
+  maxDevices: number;
+  description: string | null;
+};
+
+export async function getActiveSubscriptionPlans(): Promise<SubscriptionPlanItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("subscription_plans")
+    .select("id, name, monthly_price_sdg, max_devices, description")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    monthlyPriceSdg: p.monthly_price_sdg,
+    maxDevices: p.max_devices,
+    description: p.description,
+  }));
+}
+
+export type PaymentMethodItem = {
+  id: string;
+  bankName: string;
+  accountHolderName: string;
+  accountNumber: string;
+  iban: string | null;
+  phoneOrWallet: string | null;
+  instructions: string | null;
+};
+
+export async function getActivePaymentMethods(): Promise<PaymentMethodItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("payment_methods")
+    .select("id, bank_name, account_holder_name, account_number, iban, phone_or_wallet, instructions")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  return (data ?? []).map((m) => ({
+    id: m.id,
+    bankName: m.bank_name,
+    accountHolderName: m.account_holder_name,
+    accountNumber: m.account_number,
+    iban: m.iban,
+    phoneOrWallet: m.phone_or_wallet,
+    instructions: m.instructions,
+  }));
+}
+
+export type DealerSubscriptionStatus = {
+  planName: string;
+  maxDevices: number;
+  usedDevices: number;
+  status: Database["public"]["Enums"]["dealer_subscription_status"];
+  isCurrentlyActive: boolean;
+  expiresAt: string;
+} | null;
+
+export async function getMyDealerSubscriptionStatus(dealerId: string): Promise<DealerSubscriptionStatus> {
+  const supabase = await createClient();
+  const { data: sub } = await supabase
+    .from("dealer_subscriptions")
+    .select("plan_id, max_devices_snapshot, status, expires_at")
+    .eq("dealer_id", dealerId)
+    .maybeSingle();
+
+  if (!sub) return null;
+
+  const [{ data: plan }, { count }] = await Promise.all([
+    supabase.from("subscription_plans").select("name").eq("id", sub.plan_id).maybeSingle(),
+    supabase.from("devices").select("id", { count: "exact", head: true }).eq("owner_id", dealerId),
+  ]);
+
+  return {
+    planName: plan?.name ?? "—",
+    maxDevices: sub.max_devices_snapshot,
+    usedDevices: count ?? 0,
+    status: sub.status,
+    isCurrentlyActive: sub.status === "active" && new Date(sub.expires_at) > new Date(),
+    expiresAt: sub.expires_at,
+  };
+}
+
+export type MySubscriptionRequestItem = {
+  id: string;
+  planName: string;
+  amountSdg: number;
+  status: Database["public"]["Enums"]["dealer_subscription_request_status"];
+  rejectionReason: string | null;
+  createdAt: string;
+};
+
+export async function getMySubscriptionRequests(dealerId: string): Promise<MySubscriptionRequestItem[]> {
+  const supabase = await createClient();
+  const { data: requests } = await supabase
+    .from("dealer_subscription_requests")
+    .select("id, plan_id, amount_sdg, status, rejection_reason, created_at")
+    .eq("dealer_id", dealerId)
+    .order("created_at", { ascending: false });
+
+  if (!requests || requests.length === 0) return [];
+
+  const { data: plans } = await supabase
+    .from("subscription_plans")
+    .select("id, name")
+    .in("id", requests.map((r) => r.plan_id));
+  const planById = new Map((plans ?? []).map((p) => [p.id, p]));
+
+  return requests.map((r) => ({
+    id: r.id,
+    planName: planById.get(r.plan_id)?.name ?? "—",
+    amountSdg: r.amount_sdg,
+    status: r.status,
+    rejectionReason: r.rejection_reason,
+    createdAt: r.created_at,
+  }));
+}
+
+// A dealer with a pending request can't submit another until it's decided
+// -- the Server Action checks this before inserting.
+export async function hasPendingSubscriptionRequest(dealerId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("dealer_subscription_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("dealer_id", dealerId)
+    .eq("status", "pending");
+  return (count ?? 0) > 0;
+}
+
+export type DealerProfileDetail = {
+  businessName: string | null;
+  contactName: string | null;
+  phone: string | null;
+  address: string | null;
+  logoSignedUrl: string | null;
+};
+
+export async function getMyDealerProfile(dealerId: string): Promise<DealerProfileDetail | null> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("business_name, contact_name, phone, address, logo_path")
+    .eq("id", dealerId)
+    .maybeSingle();
+
+  if (!profile) return null;
+
+  let logoSignedUrl: string | null = null;
+  if (profile.logo_path) {
+    const { data: signed } = await supabase.storage.from("dealer-logos").createSignedUrl(profile.logo_path, 300);
+    logoSignedUrl = signed?.signedUrl ?? null;
+  }
+
+  return {
+    businessName: profile.business_name,
+    contactName: profile.contact_name,
+    phone: profile.phone,
+    address: profile.address,
+    logoSignedUrl,
+  };
+}
+
+// --- Admin: subscription plans / payment methods (full CRUD lists, incl.
+// inactive) + subscription request review queue + dealer usage overview.
+
+export type AdminSubscriptionPlanItem = SubscriptionPlanItem & { isActive: boolean; sortOrder: number };
+
+export async function getAdminSubscriptionPlans(): Promise<AdminSubscriptionPlanItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("subscription_plans")
+    .select("id, name, monthly_price_sdg, max_devices, description, is_active, sort_order")
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    monthlyPriceSdg: p.monthly_price_sdg,
+    maxDevices: p.max_devices,
+    description: p.description,
+    isActive: p.is_active,
+    sortOrder: p.sort_order,
+  }));
+}
+
+export type AdminPaymentMethodItem = PaymentMethodItem & { isActive: boolean };
+
+export async function getAdminPaymentMethods(): Promise<AdminPaymentMethodItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("payment_methods")
+    .select("id, bank_name, account_holder_name, account_number, iban, phone_or_wallet, instructions, is_active")
+    .order("created_at", { ascending: true });
+
+  return (data ?? []).map((m) => ({
+    id: m.id,
+    bankName: m.bank_name,
+    accountHolderName: m.account_holder_name,
+    accountNumber: m.account_number,
+    iban: m.iban,
+    phoneOrWallet: m.phone_or_wallet,
+    instructions: m.instructions,
+    isActive: m.is_active,
+  }));
+}
+
+export type AdminSubscriptionRequestItem = {
+  id: string;
+  dealerEmail: string | null;
+  dealerBusinessName: string | null;
+  planName: string;
+  amountSdg: number;
+  status: Database["public"]["Enums"]["dealer_subscription_request_status"];
+  rejectionReason: string | null;
+  paymentProofSignedUrl: string | null;
+  createdAt: string;
+};
+
+export async function getAdminSubscriptionRequests(filter?: {
+  status?: Database["public"]["Enums"]["dealer_subscription_request_status"];
+}): Promise<AdminSubscriptionRequestItem[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("dealer_subscription_requests")
+    .select("id, dealer_id, plan_id, amount_sdg, status, rejection_reason, payment_proof_path, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (filter?.status) query = query.eq("status", filter.status);
+
+  const { data: requests } = await query;
+  if (!requests || requests.length === 0) return [];
+
+  const [{ data: dealers }, { data: plans }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, email, business_name")
+      .in("id", requests.map((r) => r.dealer_id)),
+    supabase
+      .from("subscription_plans")
+      .select("id, name")
+      .in("id", requests.map((r) => r.plan_id)),
+  ]);
+
+  const dealerById = new Map((dealers ?? []).map((d) => [d.id, d]));
+  const planById = new Map((plans ?? []).map((p) => [p.id, p]));
+
+  return Promise.all(
+    requests.map(async (r) => {
+      const { data: signed } = await supabase.storage
+        .from("subscription-payment-proofs")
+        .createSignedUrl(r.payment_proof_path, 300);
+      return {
+        id: r.id,
+        dealerEmail: dealerById.get(r.dealer_id)?.email ?? null,
+        dealerBusinessName: dealerById.get(r.dealer_id)?.business_name ?? null,
+        planName: planById.get(r.plan_id)?.name ?? "—",
+        amountSdg: r.amount_sdg,
+        status: r.status,
+        rejectionReason: r.rejection_reason,
+        paymentProofSignedUrl: signed?.signedUrl ?? null,
+        createdAt: r.created_at,
+      };
+    })
+  );
+}
+
+export type AdminDealerUsageItem = {
+  dealerId: string;
+  dealerEmail: string | null;
+  dealerBusinessName: string | null;
+  planName: string;
+  maxDevices: number;
+  usedDevices: number;
+  status: Database["public"]["Enums"]["dealer_subscription_status"];
+  isCurrentlyActive: boolean;
+  expiresAt: string;
+};
+
+export async function getAdminDealerUsage(): Promise<AdminDealerUsageItem[]> {
+  const supabase = await createClient();
+  const { data: subs } = await supabase
+    .from("dealer_subscriptions")
+    .select("dealer_id, plan_id, max_devices_snapshot, status, expires_at")
+    .order("expires_at", { ascending: false });
+
+  if (!subs || subs.length === 0) return [];
+
+  const [{ data: dealers }, { data: plans }, { data: devices }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, email, business_name")
+      .in("id", subs.map((s) => s.dealer_id)),
+    supabase
+      .from("subscription_plans")
+      .select("id, name")
+      .in("id", subs.map((s) => s.plan_id)),
+    supabase
+      .from("devices")
+      .select("owner_id")
+      .in("owner_id", subs.map((s) => s.dealer_id)),
+  ]);
+
+  const dealerById = new Map((dealers ?? []).map((d) => [d.id, d]));
+  const planById = new Map((plans ?? []).map((p) => [p.id, p]));
+  const usedByDealer = (devices ?? []).reduce<Record<string, number>>((acc, d) => {
+    acc[d.owner_id] = (acc[d.owner_id] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return subs.map((s) => ({
+    dealerId: s.dealer_id,
+    dealerEmail: dealerById.get(s.dealer_id)?.email ?? null,
+    dealerBusinessName: dealerById.get(s.dealer_id)?.business_name ?? null,
+    planName: planById.get(s.plan_id)?.name ?? "—",
+    maxDevices: s.max_devices_snapshot,
+    usedDevices: usedByDealer[s.dealer_id] ?? 0,
+    status: s.status,
+    isCurrentlyActive: s.status === "active" && new Date(s.expires_at) > new Date(),
+    expiresAt: s.expires_at,
+  }));
+}
+
 export type AdminSecurityEventItem = {
   id: string;
   eventType: string;

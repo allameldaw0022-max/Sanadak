@@ -12,7 +12,37 @@ import { buildImeiCheckDisclosure, type ImeiCheckDisclosure } from "@/lib/device
 const GENERIC_REGISTRATION_FAILURE =
   "تعذر تسجيل الجهاز. يرجى التحقق من البيانات أو التواصل مع الدعم.";
 
-export type RegisterDeviceResult = { ok: true; deviceId: string } | { ok: false; error: string };
+export type RegisterDeviceResult =
+  | { ok: true; deviceId: string }
+  | { ok: false; error: string; limitReached?: true; ctaLabel?: string };
+
+// register_device() raises a distinct machine-readable prefix for each of
+// its three limit-related rejections (see the register_device_free_tier_limit
+// migration) -- mapped here to the exact user-facing copy + CTA label,
+// matching the established pattern of distinct RPC error substrings already
+// used elsewhere (e.g. submitOwnershipClaimAction's "already own device").
+const LIMIT_ERRORS: Record<string, { message: string; ctaLabel: string }> = {
+  FREE_LIMIT_REACHED: {
+    message: "انتهت الباقة المجانية. يمكنك تسجيل 3 أجهزة مجانًا. للاشتراك وتسجيل أجهزة إضافية، اشترك في باقة التاجر.",
+    ctaLabel: "اشترك الآن",
+  },
+  DEALER_NO_SUBSCRIPTION: {
+    message: "لا يوجد اشتراك فعال. يرجى الاشتراك أو تجديد الاشتراك أولاً.",
+    ctaLabel: "اشترك الآن",
+  },
+  DEALER_LIMIT_REACHED: {
+    message: "وصلت إلى الحد المسموح به في باقتك.",
+    ctaLabel: "ترقية الباقة",
+  },
+};
+
+function matchLimitError(message: string | undefined): { message: string; ctaLabel: string } | null {
+  if (!message) return null;
+  for (const prefix of Object.keys(LIMIT_ERRORS)) {
+    if (message.includes(prefix)) return LIMIT_ERRORS[prefix];
+  }
+  return null;
+}
 
 async function getClientIp(): Promise<string> {
   const headerList = await headers();
@@ -74,8 +104,14 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
   const { data, error } = await supabase.rpc("register_device", {
     p_brand: brand,
     p_model: model,
-    p_color: color ?? undefined,
-    p_serial_number: serialNumber ?? undefined,
+    // register_device()'s p_color/p_serial_number have no SQL default, so
+    // the generated type marks them as required `string` -- but the
+    // parameters themselves happily accept NULL at the Postgres level
+    // (only DEFAULT presence affects the generator's optionality, not
+    // nullability). The cast bridges that generator gap; the RPC call
+    // itself is unchanged from before.
+    p_color: (color ?? null) as unknown as string,
+    p_serial_number: (serialNumber ?? null) as unknown as string,
     p_imei1_normalized: imei1Normalized,
     p_imei1_hash: imei1Hash,
     p_imei2_normalized: imei2Normalized ?? undefined,
@@ -83,17 +119,22 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
   });
 
   if (error || !data) {
+    const limitMessage = matchLimitError(error?.message);
+    await logSecurityEvent({
+      eventType: "device_registration_failed",
+      actorId: user.id,
+      actorRole: "authenticated",
+      metadata: { imei1_hash: imei1Hash, db_error_code: error?.code ?? null, limit_reached: !!limitMessage },
+    });
+    if (limitMessage) {
+      return { ok: false, error: limitMessage.message, limitReached: true, ctaLabel: limitMessage.ctaLabel };
+    }
+
     // Never distinguish "IMEI already registered" (unique_violation) from
     // any other failure in the response -- both a duplicate IMEI and an
     // unrelated DB error must look identical to the caller (see spec: a
     // distinct "this IMEI belongs to someone else" message is itself a
     // privacy leak). Never log the raw IMEI -- only its hash.
-    await logSecurityEvent({
-      eventType: "device_registration_failed",
-      actorId: user.id,
-      actorRole: "authenticated",
-      metadata: { imei1_hash: imei1Hash, db_error_code: error?.code ?? null },
-    });
     return { ok: false, error: GENERIC_REGISTRATION_FAILURE };
   }
 

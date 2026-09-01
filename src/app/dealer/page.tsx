@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Store } from "lucide-react";
+import { CreditCard, Store } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase/queries";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -30,6 +31,19 @@ export default async function DealerDashboardPage() {
         <span className="text-xs font-bold text-primary-dark">حساب تاجر</span>
       </div>
       <SectionHeader title="لوحة التاجر" subtitle="فحص أرقام IMEI فرديًا أو دفعة واحدة" />
+
+      <Link
+        href="/dealer/subscription"
+        className="mb-6 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:bg-slate-50"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
+          <CreditCard className="h-5 w-5" />
+        </span>
+        <div>
+          <p className="text-sm font-bold text-navy">اشتراكي</p>
+          <p className="text-xs text-slate-500">إدارة الخطة، الدفع، وحد الأجهزة المسموح به</p>
+        </div>
+      </Link>
 
       <div className="space-y-6">
         <ImeiCheckForm />

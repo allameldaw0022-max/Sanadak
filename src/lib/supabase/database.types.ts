@@ -14,6 +14,128 @@ export type Database = {
   }
   public: {
     Tables: {
+      dealer_subscription_requests: {
+        Row: {
+          amount_sdg: number
+          created_at: string
+          dealer_id: string
+          id: string
+          max_devices_snapshot: number
+          payment_method_id: string | null
+          payment_proof_path: string
+          plan_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["dealer_subscription_request_status"]
+        }
+        Insert: {
+          amount_sdg: number
+          created_at?: string
+          dealer_id: string
+          id?: string
+          max_devices_snapshot: number
+          payment_method_id?: string | null
+          payment_proof_path: string
+          plan_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["dealer_subscription_request_status"]
+        }
+        Update: {
+          amount_sdg?: number
+          created_at?: string
+          dealer_id?: string
+          id?: string
+          max_devices_snapshot?: number
+          payment_method_id?: string | null
+          payment_proof_path?: string
+          plan_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["dealer_subscription_request_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_subscription_requests_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_subscription_requests_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_subscription_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_subscription_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dealer_subscriptions: {
+        Row: {
+          dealer_id: string
+          expires_at: string
+          id: string
+          max_devices_snapshot: number
+          plan_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["dealer_subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          dealer_id: string
+          expires_at: string
+          id?: string
+          max_devices_snapshot: number
+          plan_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["dealer_subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          dealer_id?: string
+          expires_at?: string
+          id?: string
+          max_devices_snapshot?: number
+          plan_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["dealer_subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_subscriptions_dealer_id_fkey"
+            columns: ["dealer_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dealer_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_certificates: {
         Row: {
           device_id: string
@@ -385,31 +507,85 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          account_holder_name: string
+          account_number: string
+          bank_name: string
+          created_at: string
+          iban: string | null
+          id: string
+          instructions: string | null
+          is_active: boolean
+          phone_or_wallet: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder_name: string
+          account_number: string
+          bank_name: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          phone_or_wallet?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder_name?: string
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          phone_or_wallet?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          address: string | null
+          business_name: string | null
+          contact_name: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
           is_dealer: boolean
+          logo_path: string | null
+          phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          business_name?: string | null
+          contact_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
           is_dealer?: boolean
+          logo_path?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          business_name?: string | null
+          contact_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           is_dealer?: boolean
+          logo_path?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -513,6 +689,42 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_devices: number
+          monthly_price_sdg: number
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_devices: number
+          monthly_price_sdg: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_devices?: number
+          monthly_price_sdg?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -583,6 +795,7 @@ export type Database = {
         }
         Returns: string
       }
+      current_user_is_dealer: { Args: never; Returns: boolean }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
@@ -609,13 +822,13 @@ export type Database = {
       register_device: {
         Args: {
           p_brand: string
-          p_color?: string
-          p_imei1_hash?: string
-          p_imei1_normalized?: string
+          p_color: string
+          p_imei1_hash: string
+          p_imei1_normalized: string
           p_imei2_hash?: string
           p_imei2_normalized?: string
           p_model: string
-          p_serial_number?: string
+          p_serial_number: string
         }
         Returns: string
       }
@@ -636,6 +849,14 @@ export type Database = {
           p_claim_id: string
           p_new_status: Database["public"]["Enums"]["ownership_claim_status"]
           p_note?: string
+        }
+        Returns: undefined
+      }
+      review_subscription_request: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["dealer_subscription_request_status"]
+          p_rejection_reason?: string
+          p_request_id: string
         }
         Returns: undefined
       }
@@ -674,6 +895,12 @@ export type Database = {
         | "review_required"
         | "failed"
       app_status: "pending" | "approved" | "rejected"
+      dealer_subscription_request_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+      dealer_subscription_status: "active" | "expired"
       device_report_status:
         | "SUBMITTED"
         | "UNDER_REVIEW"
@@ -840,6 +1067,13 @@ export const Constants = {
         "failed",
       ],
       app_status: ["pending", "approved", "rejected"],
+      dealer_subscription_request_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "cancelled",
+      ],
+      dealer_subscription_status: ["active", "expired"],
       device_report_status: [
         "SUBMITTED",
         "UNDER_REVIEW",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, Bell, ShieldCheck, Users } from "lucide-react";
+import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, CreditCard, Bell, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -12,6 +12,7 @@ const links = [
   { href: "/admin/devices/reports", label: "بلاغات الأجهزة", icon: ShieldAlert },
   { href: "/admin/certificates", label: "الشهادات", icon: BadgeCheck },
   { href: "/admin/dealers", label: "التجار", icon: Store },
+  { href: "/admin/subscriptions", label: "الاشتراكات", icon: CreditCard },
   { href: "/admin/notifications", label: "الإشعارات", icon: Bell },
   { href: "/admin/audit", label: "سجل الأمان", icon: ShieldCheck },
   { href: "/admin/users", label: "المستخدمون", icon: Users },

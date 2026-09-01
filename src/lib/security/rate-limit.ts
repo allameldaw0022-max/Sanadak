@@ -55,6 +55,7 @@ export const RATE_LIMITS = {
   CERTIFICATE_ISSUE_PER_USER: { limit: 20, windowSeconds: 60 * 60 }, // 20 certificate issuances/hour/user
   BATCH_IMEI_CHECK_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 batch calls/hour/user (each up to 20 IMEIs)
   BATCH_IMEI_CHECK_PER_IP: { limit: 15, windowSeconds: 60 * 60 }, // 15 batch calls/hour/IP
+  SUBSCRIPTION_REQUEST_SUBMIT_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 subscription requests/hour/dealer
 };
 
 // Hard cap on how many IMEIs one batch-check call may contain, independent
