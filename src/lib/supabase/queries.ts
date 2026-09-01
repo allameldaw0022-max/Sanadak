@@ -973,3 +973,232 @@ export async function getAdminPaymentStats(): Promise<AdminPaymentStats> {
     trialCount: subList.filter((s) => s.status === "trial").length,
   };
 }
+
+// --------------------------------------------------------------------
+// APK security scanning (admin-only reads; RLS also enforces this).
+// --------------------------------------------------------------------
+
+export type SecurityFinding = { code: string; severity: "low" | "medium" | "high" | "critical"; message: string };
+
+export type SecurityScanDetail = {
+  id: string;
+  appId: string;
+  createdAt: string;
+  completedAt: string | null;
+  sha256: string;
+  sha1: string | null;
+  md5: string | null;
+  fileSize: number;
+  packageName: string | null;
+  versionName: string | null;
+  versionCode: string | null;
+  minSdk: number | null;
+  targetSdk: number | null;
+  isSigned: boolean;
+  certificateFingerprint: string | null;
+  certificateSubject: string | null;
+  certificateIssuer: string | null;
+  certificateValidFrom: string | null;
+  certificateValidTo: string | null;
+  signatureScheme: string | null;
+  signatureChanged: boolean;
+  permissions: string[];
+  exportedComponents: string[];
+  nativeLibraries: string[];
+  detectedUrls: string[];
+  riskScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  malwareStatus: string;
+  malwareProvider: string | null;
+  findings: SecurityFinding[];
+  scanStatus: "uploaded" | "scanning" | "passed" | "failed" | "review_required";
+  isValidApk: boolean;
+  invalidReason: string | null;
+};
+
+export type AppSecurityInfo = {
+  securityStatus: string;
+  emergencyDisabled: boolean;
+  emergencyDisabledReason: string | null;
+  emergencyDisabledAt: string | null;
+  latestScan: SecurityScanDetail | null;
+};
+
+function mapScanRow(row: Record<string, unknown>): SecurityScanDetail {
+  return {
+    id: row.id as string,
+    appId: row.app_id as string,
+    createdAt: row.created_at as string,
+    completedAt: row.completed_at as string | null,
+    sha256: row.sha256 as string,
+    sha1: row.sha1 as string | null,
+    md5: row.md5 as string | null,
+    fileSize: row.file_size as number,
+    packageName: row.package_name as string | null,
+    versionName: row.version_name as string | null,
+    versionCode: row.version_code as string | null,
+    minSdk: row.min_sdk as number | null,
+    targetSdk: row.target_sdk as number | null,
+    isSigned: row.is_signed as boolean,
+    certificateFingerprint: row.certificate_fingerprint as string | null,
+    certificateSubject: row.certificate_subject as string | null,
+    certificateIssuer: row.certificate_issuer as string | null,
+    certificateValidFrom: row.certificate_valid_from as string | null,
+    certificateValidTo: row.certificate_valid_to as string | null,
+    signatureScheme: row.signature_scheme as string | null,
+    signatureChanged: row.signature_changed as boolean,
+    permissions: (row.permissions as string[] | null) ?? [],
+    exportedComponents: (row.exported_components as string[] | null) ?? [],
+    nativeLibraries: (row.native_libraries as string[] | null) ?? [],
+    detectedUrls: (row.detected_urls as string[] | null) ?? [],
+    riskScore: row.risk_score as number,
+    riskLevel: row.risk_level as SecurityScanDetail["riskLevel"],
+    malwareStatus: row.malware_status as string,
+    malwareProvider: row.malware_provider as string | null,
+    findings: (row.findings as SecurityFinding[] | null) ?? [],
+    scanStatus: row.scan_status as SecurityScanDetail["scanStatus"],
+    isValidApk: row.is_valid_apk as boolean,
+    invalidReason: row.invalid_reason as string | null,
+  };
+}
+
+export async function getAppSecurityInfo(appId: string): Promise<AppSecurityInfo | undefined> {
+  const supabase = await createClient();
+  const { data: app } = await supabase
+    .from("apps")
+    .select("security_status, emergency_disabled, emergency_disabled_reason, emergency_disabled_at, security_scan_id")
+    .eq("id", appId)
+    .maybeSingle();
+
+  if (!app) return undefined;
+
+  let latestScan: SecurityScanDetail | null = null;
+  if (app.security_scan_id) {
+    const { data: scan } = await supabase
+      .from("apk_security_scans")
+      .select("*")
+      .eq("id", app.security_scan_id)
+      .maybeSingle();
+    if (scan) latestScan = mapScanRow(scan as Record<string, unknown>);
+  }
+
+  return {
+    securityStatus: app.security_status,
+    emergencyDisabled: app.emergency_disabled,
+    emergencyDisabledReason: app.emergency_disabled_reason,
+    emergencyDisabledAt: app.emergency_disabled_at,
+    latestScan,
+  };
+}
+
+export type AdminSecurityStats = {
+  totalScanned: number;
+  passed: number;
+  failed: number;
+  reviewRequired: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+};
+
+export async function getAdminSecurityStats(): Promise<AdminSecurityStats> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("apk_security_scans").select("scan_status, risk_level");
+  const list = data ?? [];
+
+  return {
+    totalScanned: list.length,
+    passed: list.filter((s) => s.scan_status === "passed").length,
+    failed: list.filter((s) => s.scan_status === "failed").length,
+    reviewRequired: list.filter((s) => s.scan_status === "review_required").length,
+    critical: list.filter((s) => s.risk_level === "critical").length,
+    high: list.filter((s) => s.risk_level === "high").length,
+    medium: list.filter((s) => s.risk_level === "medium").length,
+    low: list.filter((s) => s.risk_level === "low").length,
+  };
+}
+
+export type AdminSecurityScanListItem = {
+  scanId: string;
+  appId: string;
+  appName: string;
+  developerName: string;
+  version: string | null;
+  sha256: string;
+  scanStatus: string;
+  riskLevel: string;
+  riskScore: number;
+  malwareStatus: string;
+  createdAt: string;
+};
+
+export async function getAdminSecurityScansList(): Promise<AdminSecurityScanListItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("apk_security_scans")
+    .select(
+      `id, app_id, version_name, sha256, scan_status, risk_level, risk_score, malware_status, created_at,
+       app:apps!apk_security_scans_app_id_fkey(name, developer:profiles!apps_developer_id_fkey(full_name))`
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  type Row = {
+    id: string;
+    app_id: string;
+    version_name: string | null;
+    sha256: string;
+    scan_status: string;
+    risk_level: string;
+    risk_score: number;
+    malware_status: string;
+    created_at: string;
+    app:
+      | { name: string; developer: { full_name: string | null } | { full_name: string | null }[] | null }
+      | { name: string; developer: { full_name: string | null } | { full_name: string | null }[] | null }[]
+      | null;
+  };
+
+  return ((data ?? []) as unknown as Row[]).map((row) => {
+    const app = Array.isArray(row.app) ? row.app[0] : row.app;
+    const developer = app?.developer ? (Array.isArray(app.developer) ? app.developer[0] : app.developer) : null;
+    return {
+      scanId: row.id,
+      appId: row.app_id,
+      appName: app?.name ?? "—",
+      developerName: developer?.full_name ?? "مطور سندك",
+      version: row.version_name,
+      sha256: row.sha256,
+      scanStatus: row.scan_status,
+      riskLevel: row.risk_level,
+      riskScore: row.risk_score,
+      malwareStatus: row.malware_status,
+      createdAt: row.created_at,
+    };
+  });
+}
+
+export type DeveloperAppSecurity = { appId: string; securityStatus: string; findings: SecurityFinding[] };
+
+export async function getDeveloperAppsSecurity(developerId: string): Promise<DeveloperAppSecurity[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("apps")
+    .select("id, security_status, security_scan_id")
+    .eq("developer_id", developerId);
+
+  const scanIds = (data ?? []).map((a) => a.security_scan_id).filter((id): id is string => Boolean(id));
+  if (scanIds.length === 0) {
+    return (data ?? []).map((a) => ({ appId: a.id, securityStatus: a.security_status, findings: [] }));
+  }
+
+  const { data: scans } = await supabase.from("apk_security_scans").select("id, findings").in("id", scanIds);
+  const findingsByScanId = new Map((scans ?? []).map((s) => [s.id, (s.findings as SecurityFinding[] | null) ?? []]));
+
+  return (data ?? []).map((a) => ({
+    appId: a.id,
+    securityStatus: a.security_status,
+    findings: a.security_scan_id ? (findingsByScanId.get(a.security_scan_id) ?? []) : [],
+  }));
+}

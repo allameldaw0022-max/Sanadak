@@ -14,6 +14,7 @@ import { ReportAppButton } from "@/components/apps/ReportAppButton";
 import {
   getAppBySlug,
   getAppReviews,
+  getAppSecurityInfo,
   getCategoryBySlug,
   getCurrentUser,
   getMyReviewForApp,
@@ -54,11 +55,12 @@ export default async function AppDetailsPage({
   const app = await getAppBySlug(slug);
   if (!app) notFound();
 
-  const [category, similarApps, reviews, currentUser] = await Promise.all([
+  const [category, similarApps, reviews, currentUser, security] = await Promise.all([
     getCategoryBySlug(app.categorySlug),
     getSimilarApps(app),
     getAppReviews(app.id),
     getCurrentUser(),
+    getAppSecurityInfo(app.id),
   ]);
 
   const myReview = currentUser ? await getMyReviewForApp(app.id, currentUser.id) : null;
@@ -128,6 +130,12 @@ export default async function AppDetailsPage({
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-primary-dark sm:justify-start">
                 <ShieldCheck className="h-4 w-4" />
                 تمت مراجعة التطبيق من فريق سندك
+              </p>
+            )}
+            {security?.securityStatus === "passed" && (
+              <p className="mt-1.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-primary-dark sm:justify-start">
+                <ShieldCheck className="h-4 w-4" />
+                🛡️ تم فحص التطبيق وفق آليات سندك الأمنية
               </p>
             )}
           </div>

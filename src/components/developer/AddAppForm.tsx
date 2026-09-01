@@ -14,17 +14,9 @@ import {
 } from "lucide-react";
 import { categories } from "@/data/categories";
 import { createClient } from "@/lib/supabase/client";
+import { submitNewAppAction } from "@/app/developer/dashboard/apps/new/actions";
 
 const MAX_APK_SIZE = 50 * 1024 * 1024; // matches the sanadak-apks bucket limit
-
-function slugify(name: string) {
-  const base = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return `${base || "app"}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -149,8 +141,6 @@ export function AddAppForm() {
       return;
     }
 
-    const slug = slugify(name);
-
     const uploadUrlRes = await fetch("/api/r2/upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -177,34 +167,22 @@ export function AddAppForm() {
       return;
     }
 
-    const shortDescription =
-      description.length > 140 ? `${description.slice(0, 137)}...` : description;
-
-    const { error: insertError } = await supabase.from("apps").insert({
-      slug,
+    // The rest of the pipeline (creating the app row and running the
+    // server-side security scan) happens in a Server Action — the browser
+    // never gets to decide security_status or skip the scan.
+    const result = await submitNewAppAction({
       name,
-      developer_id: user.id,
-      category_slug: categorySlug,
-      short_description: shortDescription,
       description,
+      categorySlug,
       version,
       size,
-      apk_path: apkPath,
+      apkPath,
     });
 
     setLoading(false);
 
-    if (insertError) {
-      await fetch("/api/r2/delete-object", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: apkPath }),
-      });
-      setError(
-        insertError.message.includes("row-level security")
-          ? "تعذر إرسال التطبيق: تجاوزت الحد المسموح به في خطة اشتراكك أو انتهى اشتراكك."
-          : "تعذر إرسال التطبيق للمراجعة، حاول مرة أخرى."
-      );
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
@@ -218,7 +196,8 @@ export function AddAppForm() {
         <CheckCircle2 className="h-12 w-12 text-primary" />
         <h1 className="text-lg font-extrabold text-navy">تم إرسال تطبيقك للمراجعة</h1>
         <p className="max-w-sm text-sm text-slate-500">
-          تم رفع ملف APK بنجاح، وسيقوم فريق سندك بمراجعة تطبيقك، وسيظهر ضمن قائمة &quot;قيد المراجعة&quot; حتى تتم الموافقة عليها.
+          تم رفع ملف APK وإجراء فحص أمني أولي عليه تلقائيًا. سيظهر تطبيقك للمستخدمين فقط بعد اجتياز الفحص الأمني
+          واعتماد فريق سندك له إداريًا. يمكنك متابعة حالة الفحص من لوحة التحكم.
         </p>
         <Link
           href="/developer/dashboard"

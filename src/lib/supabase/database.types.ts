@@ -14,6 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
+      apk_security_scans: {
+        Row: {
+          activities: Json
+          app_id: string
+          certificate_fingerprint: string | null
+          certificate_issuer: string | null
+          certificate_subject: string | null
+          certificate_valid_from: string | null
+          certificate_valid_to: string | null
+          completed_at: string | null
+          created_at: string
+          deep_links: Json
+          detected_urls: Json
+          developer_id: string
+          exported_components: Json
+          file_path: string
+          file_size: number
+          findings: Json
+          id: string
+          invalid_reason: string | null
+          is_signed: boolean
+          is_valid_apk: boolean
+          malware_details: Json | null
+          malware_provider: string | null
+          malware_report_id: string | null
+          malware_status: string
+          md5: string | null
+          min_sdk: number | null
+          native_libraries: Json
+          package_name: string | null
+          permissions: Json
+          previous_certificate_fingerprint: string | null
+          providers: Json
+          receivers: Json
+          risk_level: Database["public"]["Enums"]["security_risk_level"]
+          risk_score: number
+          scan_status: Database["public"]["Enums"]["security_scan_status"]
+          services: Json
+          sha1: string | null
+          sha256: string
+          signature_changed: boolean
+          signature_scheme: string | null
+          target_sdk: number | null
+          version_code: string | null
+          version_name: string | null
+        }
+        Insert: {
+          activities?: Json
+          app_id: string
+          certificate_fingerprint?: string | null
+          certificate_issuer?: string | null
+          certificate_subject?: string | null
+          certificate_valid_from?: string | null
+          certificate_valid_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deep_links?: Json
+          detected_urls?: Json
+          developer_id: string
+          exported_components?: Json
+          file_path: string
+          file_size: number
+          findings?: Json
+          id?: string
+          invalid_reason?: string | null
+          is_signed?: boolean
+          is_valid_apk?: boolean
+          malware_details?: Json | null
+          malware_provider?: string | null
+          malware_report_id?: string | null
+          malware_status?: string
+          md5?: string | null
+          min_sdk?: number | null
+          native_libraries?: Json
+          package_name?: string | null
+          permissions?: Json
+          previous_certificate_fingerprint?: string | null
+          providers?: Json
+          receivers?: Json
+          risk_level?: Database["public"]["Enums"]["security_risk_level"]
+          risk_score?: number
+          scan_status?: Database["public"]["Enums"]["security_scan_status"]
+          services?: Json
+          sha1?: string | null
+          sha256: string
+          signature_changed?: boolean
+          signature_scheme?: string | null
+          target_sdk?: number | null
+          version_code?: string | null
+          version_name?: string | null
+        }
+        Update: {
+          activities?: Json
+          app_id?: string
+          certificate_fingerprint?: string | null
+          certificate_issuer?: string | null
+          certificate_subject?: string | null
+          certificate_valid_from?: string | null
+          certificate_valid_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deep_links?: Json
+          detected_urls?: Json
+          developer_id?: string
+          exported_components?: Json
+          file_path?: string
+          file_size?: number
+          findings?: Json
+          id?: string
+          invalid_reason?: string | null
+          is_signed?: boolean
+          is_valid_apk?: boolean
+          malware_details?: Json | null
+          malware_provider?: string | null
+          malware_report_id?: string | null
+          malware_status?: string
+          md5?: string | null
+          min_sdk?: number | null
+          native_libraries?: Json
+          package_name?: string | null
+          permissions?: Json
+          previous_certificate_fingerprint?: string | null
+          providers?: Json
+          receivers?: Json
+          risk_level?: Database["public"]["Enums"]["security_risk_level"]
+          risk_score?: number
+          scan_status?: Database["public"]["Enums"]["security_scan_status"]
+          services?: Json
+          sha1?: string | null
+          sha256?: string
+          signature_changed?: boolean
+          signature_scheme?: string | null
+          target_sdk?: number | null
+          version_code?: string | null
+          version_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apk_security_scans_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apk_security_scans_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_downloads: {
         Row: {
           app_id: string
@@ -103,12 +256,19 @@ export type Database = {
       }
       apps: {
         Row: {
+          apk_md5: string | null
           apk_path: string | null
+          apk_sha1: string | null
+          apk_sha256: string | null
           category_slug: string
           created_at: string
           description: string
           developer_id: string
           downloads_count: number
+          emergency_disabled: boolean
+          emergency_disabled_at: string | null
+          emergency_disabled_by: string | null
+          emergency_disabled_reason: string | null
           featured: boolean
           icon_color: string
           id: string
@@ -119,6 +279,8 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           screenshots_count: number
+          security_scan_id: string | null
+          security_status: Database["public"]["Enums"]["app_security_status"]
           short_description: string
           size: string
           slug: string
@@ -127,12 +289,19 @@ export type Database = {
           version: string
         }
         Insert: {
+          apk_md5?: string | null
           apk_path?: string | null
+          apk_sha1?: string | null
+          apk_sha256?: string | null
           category_slug: string
           created_at?: string
           description: string
           developer_id: string
           downloads_count?: number
+          emergency_disabled?: boolean
+          emergency_disabled_at?: string | null
+          emergency_disabled_by?: string | null
+          emergency_disabled_reason?: string | null
           featured?: boolean
           icon_color?: string
           id?: string
@@ -143,6 +312,8 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           screenshots_count?: number
+          security_scan_id?: string | null
+          security_status?: Database["public"]["Enums"]["app_security_status"]
           short_description: string
           size?: string
           slug: string
@@ -151,12 +322,19 @@ export type Database = {
           version?: string
         }
         Update: {
+          apk_md5?: string | null
           apk_path?: string | null
+          apk_sha1?: string | null
+          apk_sha256?: string | null
           category_slug?: string
           created_at?: string
           description?: string
           developer_id?: string
           downloads_count?: number
+          emergency_disabled?: boolean
+          emergency_disabled_at?: string | null
+          emergency_disabled_by?: string | null
+          emergency_disabled_reason?: string | null
           featured?: boolean
           icon_color?: string
           id?: string
@@ -167,6 +345,8 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           screenshots_count?: number
+          security_scan_id?: string | null
+          security_status?: Database["public"]["Enums"]["app_security_status"]
           short_description?: string
           size?: string
           slug?: string
@@ -190,10 +370,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "apps_emergency_disabled_by_fkey"
+            columns: ["emergency_disabled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "apps_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apps_security_scan_id_fkey"
+            columns: ["security_scan_id"]
+            isOneToOne: false
+            referencedRelation: "apk_security_scans"
             referencedColumns: ["id"]
           },
         ]
@@ -447,6 +641,108 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          app_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          scan_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          app_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          scan_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          app_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          scan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_events_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_events_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "apk_security_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_rate_limits: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      security_rules_config: {
+        Row: {
+          config: Json
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config: Json
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config?: Json
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_rules_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -535,8 +831,21 @@ export type Database = {
       }
     }
     Enums: {
+      app_security_status:
+        | "pending_scan"
+        | "scanning"
+        | "passed"
+        | "review_required"
+        | "failed"
       app_status: "pending" | "approved" | "rejected"
       payment_status: "pending" | "approved" | "rejected" | "cancelled"
+      security_risk_level: "low" | "medium" | "high" | "critical"
+      security_scan_status:
+        | "uploaded"
+        | "scanning"
+        | "passed"
+        | "failed"
+        | "review_required"
       subscription_plan: "trial" | "basic" | "pro"
       subscription_status: "trial" | "active" | "expired" | "suspended"
       user_role: "user" | "developer" | "admin"
@@ -667,8 +976,23 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_security_status: [
+        "pending_scan",
+        "scanning",
+        "passed",
+        "review_required",
+        "failed",
+      ],
       app_status: ["pending", "approved", "rejected"],
       payment_status: ["pending", "approved", "rejected", "cancelled"],
+      security_risk_level: ["low", "medium", "high", "critical"],
+      security_scan_status: [
+        "uploaded",
+        "scanning",
+        "passed",
+        "failed",
+        "review_required",
+      ],
       subscription_plan: ["trial", "basic", "pro"],
       subscription_status: ["trial", "active", "expired", "suspended"],
       user_role: ["user", "developer", "admin"],

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, AppWindow, UserCog, Users, Download, Flag, CreditCard, Settings, Store } from "lucide-react";
+import { LayoutDashboard, AppWindow, UserCog, Users, Download, Flag, CreditCard, Settings, Store, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
   { href: "/admin/apps", label: "التطبيقات", icon: AppWindow },
+  { href: "/admin/security", label: "الأمان", icon: ShieldCheck },
   { href: "/admin/developers", label: "المطورون", icon: UserCog },
   { href: "/admin/users", label: "المستخدمون", icon: Users },
   { href: "/admin/downloads", label: "التحميلات", icon: Download },

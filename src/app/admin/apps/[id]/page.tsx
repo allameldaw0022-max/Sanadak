@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldCheck, ShieldQuestion, ShieldOff, ShieldAlert } from "lucide-react";
 import { AppIcon } from "@/components/ui/AppIcon";
 import { StatusBadge } from "@/components/ui/Badge";
+import { SecurityStatusBadge, RiskLevelBadge } from "@/components/ui/SecurityStatusBadge";
 import { DownloadButton } from "@/components/ui/DownloadButton";
 import { RejectAppButton } from "@/components/admin/RejectAppButton";
-import { getAdminAppById } from "@/lib/supabase/queries";
-import { formatDate } from "@/lib/utils";
+import { SecurityReasonButton } from "@/components/admin/SecurityReasonButton";
+import { getAdminAppById, getAppSecurityInfo } from "@/lib/supabase/queries";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { approveAppAction } from "@/app/admin/actions";
+import {
+  approveSecurityAction,
+  rejectSecurityAction,
+  requestSecurityReviewAction,
+  emergencyDisableAction,
+  emergencyReenableAction,
+} from "@/app/admin/security/actions";
 
 export const metadata: Metadata = {
   title: "مراجعة تطبيق | سندك",
@@ -16,7 +25,7 @@ export const metadata: Metadata = {
 
 export default async function AdminAppDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const app = await getAdminAppById(id);
+  const [app, security] = await Promise.all([getAdminAppById(id), getAppSecurityInfo(id)]);
   if (!app) notFound();
 
   return (
@@ -121,6 +130,202 @@ export default async function AdminAppDetailPage({ params }: { params: Promise<{
             <DownloadButton appId={app.id} apkPath={app.apkPath} size="md" />
           </div>
         </div>
+
+        {security && (
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-bold text-navy">الفحص الأمني</h2>
+              <div className="flex items-center gap-2">
+                <SecurityStatusBadge status={security.securityStatus} />
+                {security.latestScan && <RiskLevelBadge level={security.latestScan.riskLevel} />}
+              </div>
+            </div>
+
+            {security.emergencyDisabled && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-red-700">
+                  <ShieldOff className="h-3.5 w-3.5" />
+                  تم إيقاف هذا التطبيق بشكل طارئ
+                </p>
+                <p className="mt-1 text-sm text-red-600">{security.emergencyDisabledReason}</p>
+                {security.emergencyDisabledAt && (
+                  <p className="mt-1 text-xs text-red-500">{formatDateTime(security.emergencyDisabledAt)}</p>
+                )}
+              </div>
+            )}
+
+            {security.latestScan ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">Package name</span>
+                    <span className="font-mono text-xs font-semibold text-navy" dir="ltr">
+                      {security.latestScan.packageName ?? "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">الإصدار</span>
+                    <span className="font-semibold text-navy">
+                      {security.latestScan.versionName ?? "—"} ({security.latestScan.versionCode ?? "—"})
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">SHA-256</span>
+                    <span className="max-w-[60%] truncate font-mono text-[11px] text-navy" dir="ltr">
+                      {security.latestScan.sha256}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">min/target SDK</span>
+                    <span className="font-semibold text-navy">
+                      {security.latestScan.minSdk ?? "—"} / {security.latestScan.targetSdk ?? "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">حجم الملف</span>
+                    <span className="font-semibold text-navy">
+                      {(security.latestScan.fileSize / (1024 * 1024)).toFixed(1)} MB
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">التوقيع الرقمي</span>
+                    <span className="font-semibold text-navy">
+                      {security.latestScan.isSigned ? `موقّع (${security.latestScan.signatureScheme})` : "غير موقّع"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">certificate fingerprint</span>
+                    <span className="max-w-[60%] truncate font-mono text-[11px] text-navy" dir="ltr">
+                      {security.latestScan.certificateFingerprint ?? "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">فحص Malware</span>
+                    <span className="font-semibold text-navy">
+                      {security.latestScan.malwareProvider
+                        ? `${security.latestScan.malwareProvider}: ${security.latestScan.malwareStatus}`
+                        : security.latestScan.malwareStatus}
+                    </span>
+                  </div>
+                </div>
+
+                {security.latestScan.permissions.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-1.5 text-xs font-bold text-navy">الصلاحيات (Permissions)</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {security.latestScan.permissions.map((p) => (
+                        <span key={p} className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-600">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {security.latestScan.exportedComponents.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-1.5 text-xs font-bold text-navy">مكوّنات مُصدَّرة (exported)</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {security.latestScan.exportedComponents.map((c) => (
+                        <span key={c} className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-600">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {security.latestScan.findings.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-1.5 text-xs font-bold text-navy">نتائج الفحص (Findings)</p>
+                    <ul className="space-y-1.5">
+                      {security.latestScan.findings.map((f) => (
+                        <li
+                          key={f.code}
+                          className="flex items-start gap-1.5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700"
+                        >
+                          <ShieldAlert
+                            className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${
+                              f.severity === "critical" || f.severity === "high" ? "text-red-500" : "text-amber-500"
+                            }`}
+                          />
+                          {f.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">لم يُجرَ فحص أمني لهذا التطبيق بعد.</p>
+            )}
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {security.securityStatus !== "passed" && (
+                <form action={approveSecurityAction}>
+                  <input type="hidden" name="appId" value={app.id} />
+                  <button
+                    type="submit"
+                    className="flex h-11 items-center gap-1.5 rounded-xl bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    اعتماد أمنيًا
+                  </button>
+                </form>
+              )}
+              {security.securityStatus !== "review_required" && (
+                <form action={requestSecurityReviewAction}>
+                  <input type="hidden" name="appId" value={app.id} />
+                  <button
+                    type="submit"
+                    className="flex h-11 items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-100"
+                  >
+                    <ShieldQuestion className="h-4 w-4" />
+                    طلب مراجعة
+                  </button>
+                </form>
+              )}
+              {security.securityStatus !== "failed" && (
+                <SecurityReasonButton
+                  appId={app.id}
+                  action={rejectSecurityAction}
+                  icon={ShieldOff}
+                  label="رفض أمنيًا"
+                  dialogTitle="سبب الرفض الأمني"
+                  dialogHint="سيُمنع نشر هذا التطبيق حتى تتم إعادة رفعه وفحصه من جديد."
+                  confirmLabel="تأكيد الرفض"
+                  placeholder="اكتب سببًا واضحًا للرفض الأمني..."
+                  className="flex h-11 items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
+                />
+              )}
+              {security.emergencyDisabled ? (
+                <form action={emergencyReenableAction}>
+                  <input type="hidden" name="appId" value={app.id} />
+                  <button
+                    type="submit"
+                    className="flex h-11 items-center gap-1.5 rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    إلغاء الإيقاف الطارئ
+                  </button>
+                </form>
+              ) : (
+                <SecurityReasonButton
+                  appId={app.id}
+                  action={emergencyDisableAction}
+                  icon={ShieldOff}
+                  label="🚨 إيقاف فوري"
+                  dialogTitle="إيقاف التطبيق بشكل طارئ"
+                  dialogHint="سيختفي التطبيق فورًا من المتجر ويُمنع تحميله حتى تُلغي الإيقاف."
+                  confirmLabel="تأكيد الإيقاف الفوري"
+                  placeholder="اكتب سبب الإيقاف الطارئ..."
+                  className="flex h-11 items-center gap-1.5 rounded-xl bg-red-600 px-5 text-sm font-bold text-white transition-colors hover:bg-red-700"
+                  confirmClassName="bg-red-600 hover:bg-red-700"
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

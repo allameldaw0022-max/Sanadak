@@ -10,6 +10,7 @@ import {
   getDeveloperApps,
   getDeveloperStats,
   getDeveloperSubscription,
+  getDeveloperAppsSecurity,
 } from "@/lib/supabase/queries";
 import { formatDownloads } from "@/lib/utils";
 
@@ -21,10 +22,11 @@ export default async function DeveloperDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [stats, developerApps, subscription] = await Promise.all([
+  const [stats, developerApps, subscription, appsSecurity] = await Promise.all([
     getDeveloperStats(user.id),
     getDeveloperApps(user.id),
     getDeveloperSubscription(user.id),
+    getDeveloperAppsSecurity(user.id),
   ]);
 
   return (
@@ -73,7 +75,7 @@ export default async function DeveloperDashboardPage() {
 
       <div className="mt-10">
         <h2 className="mb-4 text-lg font-bold text-navy">تطبيقاتي</h2>
-        <AppsTable apps={developerApps} />
+        <AppsTable apps={developerApps} appsSecurity={appsSecurity} />
       </div>
     </div>
   );
