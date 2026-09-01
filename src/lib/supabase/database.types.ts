@@ -461,6 +461,297 @@ export type Database = {
         }
         Relationships: []
       }
+      device_imeis: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          imei_hash: string
+          imei_normalized: string
+          kind: Database["public"]["Enums"]["imei_kind"]
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          imei_hash: string
+          imei_normalized: string
+          kind: Database["public"]["Enums"]["imei_kind"]
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          imei_hash?: string
+          imei_normalized?: string
+          kind?: Database["public"]["Enums"]["imei_kind"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_imeis_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_reports: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          details: string | null
+          device_id: string
+          id: string
+          report_type: Database["public"]["Enums"]["device_report_type"]
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["device_report_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          details?: string | null
+          device_id: string
+          id?: string
+          report_type: Database["public"]["Enums"]["device_report_type"]
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["device_report_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          details?: string | null
+          device_id?: string
+          id?: string
+          report_type?: Database["public"]["Enums"]["device_report_type"]
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["device_report_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_reports_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_status_history: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          device_id: string
+          id: string
+          new_status: Database["public"]["Enums"]["device_status"]
+          old_status: Database["public"]["Enums"]["device_status"] | null
+          reason: string | null
+          source: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          new_status: Database["public"]["Enums"]["device_status"]
+          old_status?: Database["public"]["Enums"]["device_status"] | null
+          reason?: string | null
+          source: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["device_status"]
+          old_status?: Database["public"]["Enums"]["device_status"] | null
+          reason?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_status_history_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_status_history_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devices: {
+        Row: {
+          brand: string
+          color: string | null
+          created_at: string
+          current_status: Database["public"]["Enums"]["device_status"]
+          id: string
+          model: string
+          owner_id: string
+          serial_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          color?: string | null
+          created_at?: string
+          current_status?: Database["public"]["Enums"]["device_status"]
+          id?: string
+          model: string
+          owner_id: string
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          color?: string | null
+          created_at?: string
+          current_status?: Database["public"]["Enums"]["device_status"]
+          id?: string
+          model?: string
+          owner_id?: string
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ownership_claims: {
+        Row: {
+          claimant_id: string
+          created_at: string
+          device_id: string
+          id: string
+          note: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["ownership_claim_status"]
+          updated_at: string
+        }
+        Insert: {
+          claimant_id: string
+          created_at?: string
+          device_id: string
+          id?: string
+          note?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["ownership_claim_status"]
+          updated_at?: string
+        }
+        Update: {
+          claimant_id?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          note?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["ownership_claim_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_claims_claimant_id_fkey"
+            columns: ["claimant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_claims_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_claims_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ownership_evidence: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          storage_path: string
+          uploader_id: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          storage_path: string
+          uploader_id: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          storage_path?: string
+          uploader_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_evidence_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ownership_evidence_uploader_id_fkey"
+            columns: ["uploader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_requests: {
         Row: {
           admin_note: string | null
@@ -640,6 +931,45 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      report_evidence: {
+        Row: {
+          created_at: string
+          id: string
+          report_id: string
+          storage_path: string
+          uploader_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          report_id: string
+          storage_path: string
+          uploader_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          report_id?: string
+          storage_path?: string
+          uploader_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_evidence_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "device_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_evidence_uploader_id_fkey"
+            columns: ["uploader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -866,12 +1196,45 @@ export type Database = {
         Args: { p_developer_id: string }
         Returns: boolean
       }
+      imei_luhn_valid: { Args: { p_imei: string }; Returns: boolean }
+      is_valid_device_status_transition: {
+        Args: {
+          p_new: Database["public"]["Enums"]["device_status"]
+          p_old: Database["public"]["Enums"]["device_status"]
+        }
+        Returns: boolean
+      }
       reject_payment_request: {
         Args: { p_admin_note: string; p_request_id: string }
         Returns: undefined
       }
+      review_device_report: {
+        Args: {
+          p_admin_note?: string
+          p_new_status: Database["public"]["Enums"]["device_report_status"]
+          p_report_id: string
+        }
+        Returns: undefined
+      }
+      review_ownership_claim: {
+        Args: {
+          p_claim_id: string
+          p_new_status: Database["public"]["Enums"]["ownership_claim_status"]
+          p_note?: string
+        }
+        Returns: undefined
+      }
       sync_subscription_status: {
         Args: { p_developer_id: string }
+        Returns: undefined
+      }
+      transition_device_status: {
+        Args: {
+          p_device_id: string
+          p_new_status: Database["public"]["Enums"]["device_status"]
+          p_reason: string
+          p_source: string
+        }
         Returns: undefined
       }
     }
@@ -883,6 +1246,26 @@ export type Database = {
         | "review_required"
         | "failed"
       app_status: "pending" | "approved" | "rejected"
+      device_report_status:
+        | "SUBMITTED"
+        | "UNDER_REVIEW"
+        | "APPROVED"
+        | "REJECTED"
+      device_report_type: "LOST" | "STOLEN"
+      device_status:
+        | "ACTIVE"
+        | "UNDER_REVIEW"
+        | "LOST"
+        | "STOLEN"
+        | "RECOVERED"
+        | "BLOCKED"
+      imei_kind: "imei1" | "imei2"
+      ownership_claim_status:
+        | "SUBMITTED"
+        | "UNDER_REVIEW"
+        | "MORE_INFORMATION_REQUIRED"
+        | "APPROVED"
+        | "REJECTED"
       payment_status: "pending" | "approved" | "rejected" | "cancelled"
       security_risk_level: "low" | "medium" | "high" | "critical"
       security_scan_status:
@@ -1029,6 +1412,29 @@ export const Constants = {
         "failed",
       ],
       app_status: ["pending", "approved", "rejected"],
+      device_report_status: [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "APPROVED",
+        "REJECTED",
+      ],
+      device_report_type: ["LOST", "STOLEN"],
+      device_status: [
+        "ACTIVE",
+        "UNDER_REVIEW",
+        "LOST",
+        "STOLEN",
+        "RECOVERED",
+        "BLOCKED",
+      ],
+      imei_kind: ["imei1", "imei2"],
+      ownership_claim_status: [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "MORE_INFORMATION_REQUIRED",
+        "APPROVED",
+        "REJECTED",
+      ],
       payment_status: ["pending", "approved", "rejected", "cancelled"],
       security_risk_level: ["low", "medium", "high", "critical"],
       security_scan_status: [
