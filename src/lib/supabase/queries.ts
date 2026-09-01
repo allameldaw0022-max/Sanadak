@@ -1327,3 +1327,109 @@ export async function getMyDeviceById(ownerId: string, deviceId: string): Promis
     imei2: imei2?.imei_normalized ?? null,
   };
 }
+
+// --- Ownership claims (Phase 3, section 7): read-only queries for the
+// current user's own claims. deviceBrand/deviceModel/deviceColor come from
+// the devices row a claimant can see only via the narrow devices_select_claimant
+// RLS policy added in this phase -- owner_id is deliberately never selected
+// here even though that policy would let it through at the row level.
+
+export type MyClaimListItem = {
+  id: string;
+  status: Database["public"]["Enums"]["ownership_claim_status"];
+  createdAt: string;
+  updatedAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+};
+
+export async function getMyOwnershipClaims(claimantId: string): Promise<MyClaimListItem[]> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase
+    .from("ownership_claims")
+    .select("id, status, created_at, updated_at, device_id")
+    .eq("claimant_id", claimantId)
+    .order("created_at", { ascending: false });
+
+  if (!claims || claims.length === 0) return [];
+
+  const { data: devices } = await supabase
+    .from("devices")
+    .select("id, brand, model")
+    .in(
+      "id",
+      claims.map((c) => c.device_id)
+    );
+
+  const deviceById = new Map((devices ?? []).map((d) => [d.id, d]));
+
+  return claims.map((c) => {
+    const device = deviceById.get(c.device_id);
+    return {
+      id: c.id,
+      status: c.status,
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+      deviceBrand: device?.brand ?? "—",
+      deviceModel: device?.model ?? "—",
+    };
+  });
+}
+
+export type MyClaimDetail = {
+  id: string;
+  status: Database["public"]["Enums"]["ownership_claim_status"];
+  note: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+  deviceColor: string | null;
+  evidence: { id: string; signedUrl: string | null; createdAt: string }[];
+};
+
+export async function getMyClaimById(claimantId: string, claimId: string): Promise<MyClaimDetail | null> {
+  const supabase = await createClient();
+  const { data: claim } = await supabase
+    .from("ownership_claims")
+    .select("id, status, note, rejection_reason, created_at, updated_at, device_id")
+    .eq("id", claimId)
+    .eq("claimant_id", claimantId)
+    .maybeSingle();
+
+  if (!claim) return null;
+
+  const [{ data: device }, { data: evidence }] = await Promise.all([
+    supabase.from("devices").select("brand, model, color").eq("id", claim.device_id).maybeSingle(),
+    supabase
+      .from("ownership_evidence")
+      .select("id, storage_path, created_at")
+      .eq("claim_id", claim.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  // Short-lived signed URLs (5 min), same pattern as payment-proofs -- the
+  // bucket is private and never serves a public/permanent URL for evidence.
+  const evidenceWithUrls = await Promise.all(
+    (evidence ?? []).map(async (e) => {
+      const { data: signed } = await supabase.storage
+        .from("ownership-evidence")
+        .createSignedUrl(e.storage_path, 300);
+      return { id: e.id, signedUrl: signed?.signedUrl ?? null, createdAt: e.created_at };
+    })
+  );
+
+  return {
+    id: claim.id,
+    status: claim.status,
+    note: claim.note,
+    rejectionReason: claim.rejection_reason,
+    createdAt: claim.created_at,
+    updatedAt: claim.updated_at,
+    deviceBrand: device?.brand ?? "—",
+    deviceModel: device?.model ?? "—",
+    deviceColor: device?.color ?? null,
+    evidence: evidenceWithUrls,
+  };
+}

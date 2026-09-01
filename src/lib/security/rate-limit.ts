@@ -46,6 +46,9 @@ export const RATE_LIMITS = {
   DEVICE_REGISTER_PER_IP: { limit: 20, windowSeconds: 60 * 60 }, // 20 device registrations/hour/IP
   IMEI_CHECK_PER_IP: { limit: 20, windowSeconds: 60 * 60 }, // 20 public IMEI checks/hour/IP
   IMEI_CHECK_PER_USER: { limit: 40, windowSeconds: 60 * 60 }, // 40 public IMEI checks/hour/signed-in user
+  OWNERSHIP_CLAIM_SUBMIT_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 claim submissions/hour/user
+  OWNERSHIP_CLAIM_SUBMIT_PER_IP: { limit: 20, windowSeconds: 60 * 60 }, // 20 claim submissions/hour/IP
+  OWNERSHIP_EVIDENCE_UPLOAD_PER_USER: { limit: 20, windowSeconds: 60 * 60 }, // 20 evidence uploads/hour/user
 };
 
 // Progressive delay for the public IMEI-check endpoint: as usage climbs

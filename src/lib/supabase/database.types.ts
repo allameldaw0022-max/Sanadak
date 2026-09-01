@@ -1243,6 +1243,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      submit_ownership_claim: {
+        Args: { p_imei_hash: string; p_note?: string }
+        Returns: string
+      }
       sync_subscription_status: {
         Args: { p_developer_id: string }
         Returns: undefined

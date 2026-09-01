@@ -23,7 +23,13 @@ export type SecurityEventType =
   | "device_registration_failed"
   | "device_registration_rate_limited"
   | "imei_check"
-  | "imei_check_rate_limited";
+  | "imei_check_rate_limited"
+  | "ownership_claim_submitted"
+  | "ownership_claim_failed"
+  | "ownership_claim_rate_limited"
+  | "ownership_evidence_uploaded"
+  | "ownership_evidence_upload_failed"
+  | "ownership_evidence_rate_limited";
 
 // Append-only audit trail. Never pass password/secret values in metadata —
 // callers must only pass non-sensitive, already-computed scan/report data.
