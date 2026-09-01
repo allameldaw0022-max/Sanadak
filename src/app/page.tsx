@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Rocket, PackageOpen } from "lucide-react";
+import { Rocket, PackageOpen, ShieldCheck, Smartphone, PlusCircle } from "lucide-react";
 import { HeroSection } from "@/components/ui/HeroSection";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Container } from "@/components/ui/Container";
@@ -47,6 +47,51 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection />
+
+      <section className="border-b border-slate-200 bg-slate-50/60">
+        <Container className="py-6 sm:py-8">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link
+              href="/devices/check"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
+                <ShieldCheck className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-navy">فحص IMEI</p>
+                <p className="text-xs text-slate-500">تحقق من جهاز قبل الشراء</p>
+              </div>
+            </Link>
+
+            <Link
+              href="/devices"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
+                <Smartphone className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-navy">أجهزتي</p>
+                <p className="text-xs text-slate-500">تابع حالة أجهزتك المسجلة</p>
+              </div>
+            </Link>
+
+            <Link
+              href="/devices/new"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
+                <PlusCircle className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-bold text-navy">تسجيل جهاز</p>
+                <p className="text-xs text-slate-500">وثّق ملكية جهازك على سندك</p>
+              </div>
+            </Link>
+          </div>
+        </Container>
+      </section>
 
       <Container className="space-y-12 py-8 sm:py-12">
         {catalogIsEmpty ? (

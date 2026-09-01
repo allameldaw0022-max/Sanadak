@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/", label: "الرئيسية" },
   { href: "/apps", label: "التطبيقات" },
   { href: "/categories", label: "التصنيفات" },
+  { href: "/devices/check", label: "فحص IMEI" },
 ];
 
 function GuestActions() {
