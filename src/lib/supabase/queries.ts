@@ -1475,6 +1475,42 @@ export async function getDeviceReportsForDevice(ownerId: string, deviceId: strin
   }));
 }
 
+export type MyReportListItem = {
+  id: string;
+  status: Database["public"]["Enums"]["device_report_status"];
+  reportType: Database["public"]["Enums"]["device_report_type"];
+  createdAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+};
+
+export async function getMyDeviceReports(reporterId: string): Promise<MyReportListItem[]> {
+  const supabase = await createClient();
+  const { data: reports } = await supabase
+    .from("device_reports")
+    .select("id, status, report_type, created_at, device_id")
+    .eq("reporter_id", reporterId)
+    .order("created_at", { ascending: false });
+
+  if (!reports || reports.length === 0) return [];
+
+  const { data: devices } = await supabase
+    .from("devices")
+    .select("id, brand, model")
+    .in("id", reports.map((r) => r.device_id));
+
+  const deviceById = new Map((devices ?? []).map((d) => [d.id, d]));
+
+  return reports.map((r) => ({
+    id: r.id,
+    status: r.status,
+    reportType: r.report_type,
+    createdAt: r.created_at,
+    deviceBrand: deviceById.get(r.device_id)?.brand ?? "—",
+    deviceModel: deviceById.get(r.device_id)?.model ?? "—",
+  }));
+}
+
 export type MyReportDetail = {
   id: string;
   status: Database["public"]["Enums"]["device_report_status"];

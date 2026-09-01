@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Grid3x3, ShieldCheck, UserRound } from "lucide-react";
+import { Home, ShieldCheck, Smartphone, BadgeCheck, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileNav({ accountHref }: { accountHref: string }) {
@@ -10,9 +10,9 @@ export function MobileNav({ accountHref }: { accountHref: string }) {
 
   const items = [
     { href: "/", label: "الرئيسية", icon: Home },
-    { href: "/apps", label: "التطبيقات", icon: LayoutGrid },
-    { href: "/categories", label: "التصنيفات", icon: Grid3x3 },
     { href: "/devices/check", label: "فحص IMEI", icon: ShieldCheck },
+    { href: "/devices", label: "أجهزتي", icon: Smartphone },
+    { href: "/verify", label: "التحقق", icon: BadgeCheck },
     { href: accountHref, label: "حسابي", icon: UserRound },
   ];
 

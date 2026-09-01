@@ -1,165 +1,95 @@
 import Link from "next/link";
-import { Rocket, PackageOpen, ShieldCheck, Smartphone, PlusCircle } from "lucide-react";
-import { HeroSection } from "@/components/ui/HeroSection";
-import { SectionHeader } from "@/components/ui/SectionHeader";
-import { Container } from "@/components/ui/Container";
-import { AppCard } from "@/components/ui/AppCard";
-import { CategoryCard } from "@/components/ui/CategoryCard";
 import {
-  getCategories,
-  getCategoryCounts,
-  getFeaturedApps,
-  getLatestApps,
-  getMostDownloadedApps,
-} from "@/lib/supabase/queries";
+  ShieldCheck,
+  Smartphone,
+  PlusCircle,
+  BadgeCheck,
+  FileSearch,
+  ShieldAlert,
+  QrCode,
+  ClipboardCheck,
+} from "lucide-react";
+import { HeroSection } from "@/components/ui/HeroSection";
+import { Container } from "@/components/ui/Container";
 
-function AppRow({ apps }: { apps: Awaited<ReturnType<typeof getFeaturedApps>> }) {
-  if (apps.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-10 text-center">
-        <p className="text-sm text-slate-500">لا توجد تطبيقات هنا بعد.</p>
-      </div>
-    );
-  }
+const actions = [
+  {
+    href: "/devices/check",
+    label: "فحص IMEI",
+    desc: "تحقق من جهاز قبل الشراء",
+    icon: ShieldCheck,
+  },
+  {
+    href: "/devices/new",
+    label: "تسجيل جهاز",
+    desc: "وثّق ملكية جهازك على سندك",
+    icon: PlusCircle,
+  },
+  {
+    href: "/devices",
+    label: "أجهزتي",
+    desc: "تابع حالة أجهزتك المسجلة",
+    icon: Smartphone,
+  },
+  {
+    href: "/verify",
+    label: "التحقق من شهادة",
+    desc: "تأكد من صحة شهادة جهاز",
+    icon: BadgeCheck,
+  },
+];
 
-  return (
-    <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
-      {apps.map((app) => (
-        <AppCard key={app.id} app={app} className="w-44 shrink-0 sm:w-48 md:w-auto" />
-      ))}
-    </div>
-  );
-}
+const features = [
+  { icon: ClipboardCheck, text: "تسجيل الأجهزة وربطها برقم IMEI" },
+  { icon: FileSearch, text: "توثيق الملكية عبر مطالبات قابلة للمراجعة" },
+  { icon: ShieldAlert, text: "الإبلاغ عن الأجهزة المفقودة أو المسروقة" },
+  { icon: BadgeCheck, text: "شهادات ملكية رسمية لكل جهاز" },
+  { icon: QrCode, text: "تحقق فوري عبر رمز QR بدون تسجيل دخول" },
+];
 
-export default async function HomePage() {
-  const [categories, categoryCounts, featuredApps, latestApps, mostDownloaded] =
-    await Promise.all([
-      getCategories(),
-      getCategoryCounts(),
-      getFeaturedApps(8),
-      getLatestApps(8),
-      getMostDownloadedApps(8),
-    ]);
-
-  const catalogIsEmpty =
-    featuredApps.length === 0 && latestApps.length === 0 && mostDownloaded.length === 0;
-
+export default function HomePage() {
   return (
     <>
       <HeroSection />
 
-      <section className="border-b border-slate-200 bg-slate-50/60">
-        <Container className="py-6 sm:py-8">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <Container className="py-8 sm:py-12">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {actions.map((action) => (
             <Link
-              href="/devices/check"
-              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+              key={action.href}
+              href={action.href}
+              className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md sm:flex-row sm:items-center sm:gap-3 sm:text-right"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
-                <ShieldCheck className="h-5 w-5" />
+                <action.icon className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-sm font-bold text-navy">فحص IMEI</p>
-                <p className="text-xs text-slate-500">تحقق من جهاز قبل الشراء</p>
+                <p className="text-sm font-bold text-navy">{action.label}</p>
+                <p className="hidden text-xs text-slate-500 sm:block">{action.desc}</p>
               </div>
             </Link>
-
-            <Link
-              href="/devices"
-              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
-                <Smartphone className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-bold text-navy">أجهزتي</p>
-                <p className="text-xs text-slate-500">تابع حالة أجهزتك المسجلة</p>
-              </div>
-            </Link>
-
-            <Link
-              href="/devices/new"
-              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
-                <PlusCircle className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-bold text-navy">تسجيل جهاز</p>
-                <p className="text-xs text-slate-500">وثّق ملكية جهازك على سندك</p>
-              </div>
-            </Link>
-          </div>
-        </Container>
-      </section>
-
-      <Container className="space-y-12 py-8 sm:py-12">
-        {catalogIsEmpty ? (
-          <section className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-              <PackageOpen className="h-7 w-7" />
-            </span>
-            <h2 className="text-lg font-bold text-navy">سندك بانتظار أول تطبيق</h2>
-            <p className="max-w-sm text-sm text-slate-500">
-              لم يُنشر أي تطبيق بعد. كن أول مطور سوداني ينشر تطبيقه على سندك.
-            </p>
-            <Link
-              href="/developer/register"
-              className="mt-2 flex h-11 items-center rounded-xl bg-primary px-6 text-sm font-bold text-white hover:bg-primary-dark"
-            >
-              ابدأ كمطور
-            </Link>
-          </section>
-        ) : (
-          <>
-            <section>
-              <SectionHeader title="تطبيقات مميزة" href="/apps" />
-              <AppRow apps={featuredApps} />
-            </section>
-
-            <section>
-              <SectionHeader title="الأكثر تحميلًا" href="/apps" />
-              <AppRow apps={mostDownloaded} />
-            </section>
-
-            <section>
-              <SectionHeader title="أحدث التطبيقات" href="/apps" />
-              <AppRow apps={latestApps} />
-            </section>
-          </>
-        )}
-
-        <section>
-          <SectionHeader title="تصنيفات التطبيقات" href="/categories" />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.slug}
-                category={category}
-                count={categoryCounts[category.slug] ?? 0}
-              />
-            ))}
-          </div>
-        </section>
+          ))}
+        </div>
       </Container>
 
-      <section className="border-t border-slate-200 bg-navy">
-        <Container className="flex flex-col items-center gap-5 py-14 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-            <Rocket className="h-6 w-6" />
-          </span>
-          <h2 className="max-w-xl text-balance text-2xl font-extrabold text-white sm:text-3xl">
-            عندك تطبيق سوداني؟ خليه يوصل لمستخدمين أكثر
+      <section className="border-t border-slate-200 bg-slate-50/60">
+        <Container className="py-10 sm:py-14">
+          <h2 className="text-center text-lg font-extrabold text-navy sm:text-xl">
+            كل ما تحتاجه لحماية جهازك
           </h2>
-          <p className="max-w-lg text-balance text-sm leading-relaxed text-slate-300 sm:text-base">
-            انضم لسندك كمطور وانشر تطبيقك ليصل إلى آلاف المستخدمين السودانيين بسهولة.
-          </p>
-          <Link
-            href="/developer/register"
-            className="flex h-12 items-center rounded-xl bg-primary px-8 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-dark"
-          >
-            أضف تطبيقك
-          </Link>
+          <div className="mx-auto mt-6 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
+            {features.map((feature) => (
+              <div
+                key={feature.text}
+                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
+                  <feature.icon className="h-4.5 w-4.5" />
+                </span>
+                <p className="text-sm font-semibold text-navy">{feature.text}</p>
+              </div>
+            ))}
+          </div>
         </Container>
       </section>
     </>

@@ -4,9 +4,9 @@ import { Container } from "@/components/ui/Container";
 
 const quickLinks = [
   { href: "/", label: "الرئيسية" },
-  { href: "/apps", label: "التطبيقات" },
-  { href: "/categories", label: "التصنيفات" },
-  { href: "/developer/register", label: "للمطورين" },
+  { href: "/devices/check", label: "فحص IMEI" },
+  { href: "/devices", label: "أجهزتي" },
+  { href: "/verify", label: "التحقق من شهادة" },
 ];
 
 export function Footer() {
@@ -25,7 +25,7 @@ export function Footer() {
             <span className="text-lg font-extrabold text-navy">سندك</span>
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
-            متجر تطبيقات سوداني يتيح لك اكتشاف وتحميل التطبيقات السودانية بسهولة وأمان.
+            منصة سودانية لفحص أجهزة الجوال وتوثيق ملكيتها، عبر رقم IMEI وشهادات قابلة للتحقق.
           </p>
         </div>
 

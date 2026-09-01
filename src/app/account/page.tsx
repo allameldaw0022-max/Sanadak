@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, LayoutDashboard, ShieldCheck, UserPlus, Smartphone, Bell, BadgeCheck, Store } from "lucide-react";
+import {
+  LogOut,
+  LayoutDashboard,
+  ShieldCheck,
+  UserPlus,
+  Smartphone,
+  Bell,
+  BadgeCheck,
+  Store,
+  PlusCircle,
+  FileSearch,
+  ShieldAlert,
+} from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { getCurrentUser, getUnreadNotificationCount } from "@/lib/supabase/queries";
 import { signOutAction } from "@/app/auth/actions";
@@ -46,6 +58,30 @@ export default async function AccountPage() {
           >
             <Smartphone className="h-4 w-4" />
             أجهزتي
+          </Link>
+
+          <Link
+            href="/devices/new"
+            className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <PlusCircle className="h-4 w-4" />
+            تسجيل جهاز
+          </Link>
+
+          <Link
+            href="/devices/claims"
+            className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <FileSearch className="h-4 w-4" />
+            مطالباتي
+          </Link>
+
+          <Link
+            href="/devices/reports"
+            className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <ShieldAlert className="h-4 w-4" />
+            بلاغاتي
           </Link>
 
           <Link

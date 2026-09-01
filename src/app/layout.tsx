@@ -14,18 +14,18 @@ const cairo = Cairo({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const defaultDescription = "اكتشف التطبيقات السودانية وحمّلها بسهولة وأمان من مكان واحد.";
+const defaultDescription = "افحص رقم IMEI، سجّل جهازك، ووثّق ملكيته قبل البيع أو الشراء بأمان.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: `${SITE_NAME} | متجر تطبيقات سوداني`,
+  title: `${SITE_NAME} | فحص وتوثيق الأجهزة`,
   description: defaultDescription,
   manifest: "/manifest.webmanifest",
   openGraph: {
     siteName: SITE_NAME,
     type: "website",
     locale: "ar_SD",
-    title: `${SITE_NAME} | متجر تطبيقات سوداني`,
+    title: `${SITE_NAME} | فحص وتوثيق الأجهزة`,
     description: defaultDescription,
   },
 };
