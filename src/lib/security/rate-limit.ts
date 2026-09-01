@@ -40,4 +40,6 @@ export async function checkRateLimit(
 export const RATE_LIMITS = {
   APP_SUBMISSION_PER_DEVELOPER: { limit: 5, windowSeconds: 60 * 60 }, // 5 submissions/hour/developer
   DOWNLOAD_PER_IDENTITY: { limit: 30, windowSeconds: 60 }, // 30 downloads/minute per user or IP
+  REVIEW_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 review writes/hour/user
+  REPORT_PER_IDENTITY: { limit: 5, windowSeconds: 60 * 60 }, // 5 reports/hour per user or IP
 };

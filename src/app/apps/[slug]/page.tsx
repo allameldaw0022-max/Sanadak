@@ -21,7 +21,7 @@ import {
   getMyReviewForApp,
   getSimilarApps,
 } from "@/lib/supabase/queries";
-import { formatDate, formatDownloads, formatShortDate } from "@/lib/utils";
+import { formatDate, formatDownloads, formatShortDate, safeJsonLd } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({
@@ -103,7 +103,7 @@ export default async function AppDetailsPage({
     <Container className="py-8 sm:py-12">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
       />
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         <div className="flex flex-1 flex-col items-center gap-5 text-center sm:flex-row sm:items-start sm:text-right">

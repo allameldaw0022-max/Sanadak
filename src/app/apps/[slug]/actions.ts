@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/security/rate-limit";
 
 export async function submitReviewAction(formData: FormData) {
   const appId = formData.get("appId") as string;
@@ -18,6 +20,15 @@ export async function submitReviewAction(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("يجب تسجيل الدخول أولًا.");
+
+  const rate = await checkRateLimit(
+    `review:${user.id}`,
+    RATE_LIMITS.REVIEW_PER_USER.limit,
+    RATE_LIMITS.REVIEW_PER_USER.windowSeconds
+  );
+  if (!rate.allowed) {
+    throw new Error("لقد أرسلت عدد كبير من التقييمات خلال وقت قصير، حاول لاحقًا.");
+  }
 
   await supabase
     .from("reviews")
@@ -39,6 +50,17 @@ export async function submitReportAction(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const headerList = await headers();
+  const identity = user ? `user:${user.id}` : `ip:${headerList.get("x-forwarded-for") ?? "unknown"}`;
+  const rate = await checkRateLimit(
+    `report:${identity}`,
+    RATE_LIMITS.REPORT_PER_IDENTITY.limit,
+    RATE_LIMITS.REPORT_PER_IDENTITY.windowSeconds
+  );
+  if (!rate.allowed) {
+    throw new Error("لقد أرسلت عدد كبير من البلاغات خلال وقت قصير، حاول لاحقًا.");
+  }
 
   await supabase.from("app_reports").insert({
     app_id: appId,
