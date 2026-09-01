@@ -3,9 +3,10 @@ import { SITE_NAME } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${SITE_NAME} | متجر تطبيقات سوداني`,
+    name: `${SITE_NAME} | منصة توثيق والتحقق من الأجهزة`,
     short_name: SITE_NAME,
-    description: "اكتشف التطبيقات السودانية وحمّلها بسهولة وأمان من مكان واحد.",
+    description:
+      "منصة سودانية للتحقق من الأجهزة عبر IMEI، وتوثيق ملكيتها، والإبلاغ عن الأجهزة المفقودة أو المسروقة، وإصدار شهادات ملكية قابلة للتحقق.",
     start_url: "/",
     scope: "/",
     display: "standalone",
