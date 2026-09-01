@@ -11,6 +11,7 @@ import {
   PlusCircle,
   FileSearch,
   ShieldAlert,
+  CreditCard,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { getCurrentUser, getUnreadNotificationCount } from "@/lib/supabase/queries";
@@ -103,6 +104,14 @@ export default async function AccountPage() {
                 {unreadCount}
               </span>
             )}
+          </Link>
+
+          <Link
+            href="/dealer/subscription"
+            className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <CreditCard className="h-4 w-4" />
+            {user.isDealer ? "اشتراكي" : "اشترك كتاجر"}
           </Link>
 
           {user.isDealer && (
