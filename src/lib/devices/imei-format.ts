@@ -35,3 +35,13 @@ export function isValidImei(raw: string): boolean {
   const normalized = normalizeImei(raw);
   return normalized.length === 15 && isValidImeiLuhn(normalized);
 }
+
+// Display-only masking (e.g. "************123") for showing an IMEI in a
+// list without exposing it in full. This must be called server-side, before
+// the value is ever sent to the client -- it does not itself protect
+// anything, it just formats a string. The owner's dedicated device detail
+// page is the only place the full, unmasked IMEI should ever be rendered.
+export function maskImei(normalizedImei: string): string {
+  if (normalizedImei.length <= 3) return normalizedImei;
+  return "*".repeat(normalizedImei.length - 3) + normalizedImei.slice(-3);
+}

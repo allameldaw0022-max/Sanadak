@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, LayoutDashboard, ShieldCheck, UserPlus } from "lucide-react";
+import { LogOut, LayoutDashboard, ShieldCheck, UserPlus, Smartphone } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { getCurrentUser } from "@/lib/supabase/queries";
 import { signOutAction } from "@/app/auth/actions";
@@ -39,6 +39,14 @@ export default async function AccountPage() {
         </div>
 
         <div className="mt-4 space-y-2">
+          <Link
+            href="/devices"
+            className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <Smartphone className="h-4 w-4" />
+            أجهزتي
+          </Link>
+
           {user.role === "developer" && (
             <Link
               href="/developer/dashboard"

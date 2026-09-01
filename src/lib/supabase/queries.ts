@@ -5,6 +5,8 @@ import { getCategoryBySlug as getStaticCategoryBySlug } from "@/data/categories"
 import type { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@/lib/subscription";
 import { computeDisplayState } from "@/lib/subscription";
 import { getIconPublicUrl } from "@/lib/utils";
+import { maskImei } from "@/lib/devices/imei-format";
+import type { Database } from "./database.types";
 
 type AppRow = {
   id: string;
@@ -1225,4 +1227,103 @@ export async function getDeveloperAppsSecurity(developerId: string): Promise<Dev
     securityStatus: a.security_status,
     findings: a.security_scan_id ? (findingsByScanId.get(a.security_scan_id) ?? []) : [],
   }));
+}
+
+// --- Device verification (Phase 3): read-only queries for the current
+// user's own devices. Every device/device_imeis read here is additionally
+// scoped by owner_id even though RLS already enforces this on its own
+// (devices_select_own_or_admin / device_imeis_select_own_or_admin from the
+// Phase 1 migration) -- matching the explicit-filter style already used by
+// getDeveloperSubscription above. imei_normalized never leaves this module
+// unmasked except in getMyDeviceById, which is the one dedicated "owner
+// views their own full IMEI" page these queries exist to serve.
+
+export type DeviceListItem = {
+  id: string;
+  brand: string;
+  model: string;
+  color: string | null;
+  serialNumber: string | null;
+  currentStatus: Database["public"]["Enums"]["device_status"];
+  createdAt: string;
+  updatedAt: string;
+  imei1Masked: string;
+  imei2Masked: string | null;
+};
+
+export async function getMyDevices(ownerId: string): Promise<DeviceListItem[]> {
+  const supabase = await createClient();
+  const { data: devices } = await supabase
+    .from("devices")
+    .select("id, brand, model, color, serial_number, current_status, created_at, updated_at")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false });
+
+  if (!devices || devices.length === 0) return [];
+
+  const { data: imeis } = await supabase
+    .from("device_imeis")
+    .select("device_id, imei_normalized, kind")
+    .in(
+      "device_id",
+      devices.map((d) => d.id)
+    );
+
+  return devices.map((d) => {
+    const deviceImeis = (imeis ?? []).filter((i) => i.device_id === d.id);
+    const imei1 = deviceImeis.find((i) => i.kind === "imei1");
+    const imei2 = deviceImeis.find((i) => i.kind === "imei2");
+    return {
+      id: d.id,
+      brand: d.brand,
+      model: d.model,
+      color: d.color,
+      serialNumber: d.serial_number,
+      currentStatus: d.current_status,
+      createdAt: d.created_at,
+      updatedAt: d.updated_at,
+      imei1Masked: imei1 ? maskImei(imei1.imei_normalized) : "",
+      imei2Masked: imei2 ? maskImei(imei2.imei_normalized) : null,
+    };
+  });
+}
+
+export type DeviceDetail = DeviceListItem & {
+  imei1: string;
+  imei2: string | null;
+};
+
+export async function getMyDeviceById(ownerId: string, deviceId: string): Promise<DeviceDetail | null> {
+  const supabase = await createClient();
+  const { data: device } = await supabase
+    .from("devices")
+    .select("id, brand, model, color, serial_number, current_status, created_at, updated_at")
+    .eq("id", deviceId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (!device) return null;
+
+  const { data: imeis } = await supabase
+    .from("device_imeis")
+    .select("imei_normalized, kind")
+    .eq("device_id", device.id);
+
+  const imei1 = (imeis ?? []).find((i) => i.kind === "imei1");
+  const imei2 = (imeis ?? []).find((i) => i.kind === "imei2");
+
+  return {
+    id: device.id,
+    brand: device.brand,
+    model: device.model,
+    color: device.color,
+    serialNumber: device.serial_number,
+    currentStatus: device.current_status,
+    createdAt: device.created_at,
+    updatedAt: device.updated_at,
+    imei1Masked: imei1 ? maskImei(imei1.imei_normalized) : "",
+    imei2Masked: imei2 ? maskImei(imei2.imei_normalized) : null,
+    imei1: imei1?.imei_normalized ?? "",
+    imei2: imei2?.imei_normalized ?? null,
+  };
 }
