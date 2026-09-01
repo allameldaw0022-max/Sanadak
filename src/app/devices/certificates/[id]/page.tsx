@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { ArrowRight, BadgeCheck } from "lucide-react";
 import { getCurrentUser, getMyCertificateById } from "@/lib/supabase/queries";
 import { Container } from "@/components/ui/Container";
+import { CopyVerifyLinkButton } from "@/components/devices/CopyVerifyLinkButton";
 import { generateQrDataUrl } from "@/lib/certificates/qr";
 import { SITE_URL } from "@/lib/site";
 import { formatDate, cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export default async function CertificateDetailPage({ params }: { params: Promis
         <p className="mt-3 break-all text-[11px] text-slate-400" dir="ltr">
           {verifyUrl}
         </p>
+        <CopyVerifyLinkButton url={verifyUrl} />
         <p className="mt-2 text-xs text-slate-500">
           يمكن لأي شخص مسح رمز QR أو زيارة الرابط للتحقق من صحة هذه الشهادة دون الحاجة لتسجيل الدخول.
         </p>
