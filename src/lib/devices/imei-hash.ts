@@ -2,11 +2,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 // No explicit "server-only" import here (that package throws unconditionally
 // outside a Next.js webpack build, which breaks vitest): the node:crypto
-// import already makes this module unbundleable into a Client Component, the
-// same boundary src/lib/security/hash.ts relies on. Kept in its own file,
-// separate from the pure format helpers in imei-format.ts, so nothing that
-// legitimately needs client-safe IMEI validation ever has a reason to import
-// a module that touches IMEI_HASH_SECRET.
+// import already makes this module unbundleable into a Client Component.
+// Kept in its own file, separate from the pure format helpers in
+// imei-format.ts, so nothing that legitimately needs client-safe IMEI
+// validation ever has a reason to import a module that touches
+// IMEI_HASH_SECRET.
 
 // HMAC-SHA256 with a server-only secret, NOT plain SHA-256: without a
 // secret pepper, an attacker could precompute every Luhn-valid 15-digit

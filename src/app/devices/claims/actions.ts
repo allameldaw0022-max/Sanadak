@@ -112,11 +112,9 @@ export async function submitOwnershipClaimAction(input: {
 export type UploadEvidenceResult = { ok: true } | { ok: false; error: string };
 
 // Evidence is validated by its real bytes server-side (never a client-
-// supplied MIME type) before it's ever written to storage -- the stronger
-// of the two upload patterns already in this codebase (app-icons/
-// app_screenshots), not the weaker payment-proofs client-direct-upload
-// pattern. Private bucket, folder-scoped by uploader, append-only (no
-// UPDATE/DELETE storage policy exists at all).
+// supplied MIME type) before it's ever written to storage. Private bucket,
+// folder-scoped by uploader, append-only (no UPDATE/DELETE storage policy
+// exists at all).
 export async function submitClaimEvidenceAction(claimId: string, file: File): Promise<UploadEvidenceResult> {
   const supabase = await createClient();
   const {
