@@ -42,4 +42,25 @@ export const RATE_LIMITS = {
   DOWNLOAD_PER_IDENTITY: { limit: 30, windowSeconds: 60 }, // 30 downloads/minute per user or IP
   REVIEW_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 review writes/hour/user
   REPORT_PER_IDENTITY: { limit: 5, windowSeconds: 60 * 60 }, // 5 reports/hour per user or IP
+  DEVICE_REGISTER_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 device registrations/hour/user
+  DEVICE_REGISTER_PER_IP: { limit: 20, windowSeconds: 60 * 60 }, // 20 device registrations/hour/IP
+  IMEI_CHECK_PER_IP: { limit: 20, windowSeconds: 60 * 60 }, // 20 public IMEI checks/hour/IP
+  IMEI_CHECK_PER_USER: { limit: 40, windowSeconds: 60 * 60 }, // 40 public IMEI checks/hour/signed-in user
 };
+
+// Progressive delay for the public IMEI-check endpoint: as usage climbs
+// toward the hard rate-limit cutoff, add an increasing artificial delay
+// before responding. This raises the cost of a scripted enumeration sweep
+// (which cares about requests/second, not requests/hour) well before the
+// hard limit kicks in, while staying invisible to a normal person typing
+// a few IMEIs by hand. `used` is (limit - remaining) from checkRateLimit.
+export async function applyProgressiveDelay(used: number): Promise<void> {
+  let delayMs = 0;
+  if (used >= 15) delayMs = 5000;
+  else if (used >= 10) delayMs = 2000;
+  else if (used >= 5) delayMs = 500;
+
+  if (delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}

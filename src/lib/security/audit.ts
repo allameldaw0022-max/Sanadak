@@ -18,7 +18,12 @@ export type SecurityEventType =
   | "download_blocked"
   | "download_issued"
   | "signature_changed_detected"
-  | "rate_limited";
+  | "rate_limited"
+  | "device_registered"
+  | "device_registration_failed"
+  | "device_registration_rate_limited"
+  | "imei_check"
+  | "imei_check_rate_limited";
 
 // Append-only audit trail. Never pass password/secret values in metadata —
 // callers must only pass non-sensitive, already-computed scan/report data.

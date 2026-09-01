@@ -1204,6 +1204,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      public_check_device_status: {
+        Args: { p_imei_hash: string }
+        Returns: {
+          status: Database["public"]["Enums"]["device_status"]
+        }[]
+      }
+      register_device: {
+        Args: {
+          p_brand: string
+          p_color?: string
+          p_imei1_hash?: string
+          p_imei1_normalized?: string
+          p_imei2_hash?: string
+          p_imei2_normalized?: string
+          p_model: string
+          p_serial_number?: string
+        }
+        Returns: string
+      }
       reject_payment_request: {
         Args: { p_admin_note: string; p_request_id: string }
         Returns: undefined
