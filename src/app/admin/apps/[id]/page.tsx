@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, ShieldCheck, ShieldQuestion, ShieldOff, ShieldAlert } from "lucide-react";
 import { AppIcon } from "@/components/ui/AppIcon";
@@ -8,7 +9,7 @@ import { SecurityStatusBadge, RiskLevelBadge } from "@/components/ui/SecuritySta
 import { DownloadButton } from "@/components/ui/DownloadButton";
 import { RejectAppButton } from "@/components/admin/RejectAppButton";
 import { SecurityReasonButton } from "@/components/admin/SecurityReasonButton";
-import { getAdminAppById, getAppSecurityInfo } from "@/lib/supabase/queries";
+import { getAdminAppById, getAppSecurityInfo, getAppScreenshots } from "@/lib/supabase/queries";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { approveAppAction } from "@/app/admin/actions";
 import {
@@ -25,7 +26,11 @@ export const metadata: Metadata = {
 
 export default async function AdminAppDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [app, security] = await Promise.all([getAdminAppById(id), getAppSecurityInfo(id)]);
+  const [app, security, screenshotUrls] = await Promise.all([
+    getAdminAppById(id),
+    getAppSecurityInfo(id),
+    getAppScreenshots(id),
+  ]);
   if (!app) notFound();
 
   return (
@@ -41,7 +46,7 @@ export default async function AdminAppDetailPage({ params }: { params: Promise<{
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <AppIcon name={app.name} color={app.iconColor} size="md" />
+            <AppIcon name={app.name} color={app.iconColor} iconUrl={app.iconUrl} size="md" />
             <div>
               <h1 className="text-xl font-extrabold text-navy">{app.name}</h1>
               <p className="mt-1 text-sm text-slate-500">
@@ -130,6 +135,24 @@ export default async function AdminAppDetailPage({ params }: { params: Promise<{
             <DownloadButton appId={app.id} apkPath={app.apkPath} size="md" />
           </div>
         </div>
+
+        {screenshotUrls.length > 0 && (
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <h2 className="mb-3 text-sm font-bold text-navy">لقطات الشاشة</h2>
+            <div className="flex flex-wrap gap-3">
+              {screenshotUrls.map((url, i) => (
+                <Image
+                  key={url}
+                  src={url}
+                  alt={`لقطة شاشة ${i + 1}`}
+                  width={120}
+                  height={213}
+                  className="aspect-[9/16] w-24 rounded-xl border border-slate-200 object-cover"
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {security && (
           <div className="mt-8 border-t border-slate-100 pt-6">

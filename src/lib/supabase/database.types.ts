@@ -254,6 +254,48 @@ export type Database = {
           },
         ]
       }
+      app_screenshots: {
+        Row: {
+          app_id: string
+          created_at: string
+          developer_id: string
+          id: string
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          app_id: string
+          created_at?: string
+          developer_id: string
+          id?: string
+          sort_order?: number
+          storage_path: string
+        }
+        Update: {
+          app_id?: string
+          created_at?: string
+          developer_id?: string
+          id?: string
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_screenshots_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_screenshots_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apps: {
         Row: {
           apk_md5: string | null
@@ -271,6 +313,7 @@ export type Database = {
           emergency_disabled_reason: string | null
           featured: boolean
           icon_color: string
+          icon_path: string | null
           id: string
           name: string
           rating: number
@@ -304,6 +347,7 @@ export type Database = {
           emergency_disabled_reason?: string | null
           featured?: boolean
           icon_color?: string
+          icon_path?: string | null
           id?: string
           name: string
           rating?: number
@@ -337,6 +381,7 @@ export type Database = {
           emergency_disabled_reason?: string | null
           featured?: boolean
           icon_color?: string
+          icon_path?: string | null
           id?: string
           name?: string
           rating?: number

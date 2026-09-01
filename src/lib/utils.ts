@@ -4,6 +4,11 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
+export function getIconPublicUrl(iconPath: string | null): string | null {
+  if (!iconPath) return null;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/app-icons/${iconPath}`;
+}
+
 export function formatDownloads(count: number): string {
   if (count >= 1_000_000) {
     return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, "")} مليون+`;

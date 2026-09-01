@@ -103,7 +103,7 @@ export default async function AdminDashboardPage() {
                 className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-primary/40"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <AppIcon name={app.name} color={app.iconColor} size="sm" />
+                  <AppIcon name={app.name} color={app.iconColor} iconUrl={app.iconUrl} size="sm" />
                   <div className="min-w-0">
                     <p className="truncate font-bold text-navy">{app.name}</p>
                     <p className="truncate text-xs text-slate-500">{app.developerName}</p>

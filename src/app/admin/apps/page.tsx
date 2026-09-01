@@ -92,7 +92,7 @@ export default async function AdminAppsPage({
                   <tr key={app.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <AppIcon name={app.name} color={app.iconColor} size="sm" />
+                        <AppIcon name={app.name} color={app.iconColor} iconUrl={app.iconUrl} size="sm" />
                         <span className="font-semibold text-navy">{app.name}</span>
                       </div>
                     </td>

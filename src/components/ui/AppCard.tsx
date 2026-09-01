@@ -15,7 +15,7 @@ export function AppCard({ app, className }: { app: AppItem; className?: string }
       )}
     >
       <div className="flex items-center gap-3">
-        <AppIcon name={app.name} color={app.iconColor} size="md" className="shrink-0" />
+        <AppIcon name={app.name} color={app.iconColor} iconUrl={app.iconUrl} size="md" className="shrink-0" />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-bold text-navy">{app.name}</h3>
           <p className="mt-0.5 truncate text-xs text-slate-500">{app.developer}</p>

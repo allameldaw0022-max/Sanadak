@@ -37,6 +37,7 @@ export interface AppItem {
   version: string;
   lastUpdate: string;
   iconColor: string;
+  iconUrl: string | null;
   featured: boolean;
   screenshotsCount: number;
   status: AppStatus;

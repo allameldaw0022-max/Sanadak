@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const sizeClasses = {
@@ -6,17 +7,33 @@ const sizeClasses = {
   lg: "h-20 w-20 rounded-2xl text-3xl sm:h-24 sm:w-24 sm:text-4xl",
 };
 
+const sizePx = { sm: 48, md: 64, lg: 96 };
+
 export function AppIcon({
   name,
   color,
+  iconUrl,
   size = "md",
   className,
 }: {
   name: string;
   color: string;
+  iconUrl?: string | null;
   size?: keyof typeof sizeClasses;
   className?: string;
 }) {
+  if (iconUrl) {
+    return (
+      <Image
+        src={iconUrl}
+        alt={name}
+        width={sizePx[size]}
+        height={sizePx[size]}
+        className={cn("shrink-0 object-cover shadow-sm", sizeClasses[size].replace(/text-\S+/, ""), className)}
+      />
+    );
+  }
+
   return (
     <div
       className={cn(

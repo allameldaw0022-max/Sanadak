@@ -4,6 +4,7 @@ import type { AppItem, AppStatus, Category, CategorySlug } from "@/data/types";
 import { getCategoryBySlug as getStaticCategoryBySlug } from "@/data/categories";
 import type { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@/lib/subscription";
 import { computeDisplayState } from "@/lib/subscription";
+import { getIconPublicUrl } from "@/lib/utils";
 
 type AppRow = {
   id: string;
@@ -16,6 +17,7 @@ type AppRow = {
   version: string;
   size: string;
   icon_color: string;
+  icon_path: string | null;
   status: string;
   featured: boolean;
   rating: number;
@@ -48,6 +50,7 @@ function mapApp(row: AppRow): AppItem {
     version: row.version,
     lastUpdate: row.updated_at,
     iconColor: row.icon_color,
+    iconUrl: getIconPublicUrl(row.icon_path),
     featured: row.featured,
     screenshotsCount: row.screenshots_count,
     apkPath: row.apk_path,
@@ -291,6 +294,7 @@ type AdminAppListRow = {
   slug: string;
   name: string;
   icon_color: string;
+  icon_path: string | null;
   developer_id: string;
   category_slug: string;
   version: string;
@@ -306,6 +310,7 @@ export type AdminAppListItem = {
   slug: string;
   name: string;
   iconColor: string;
+  iconUrl: string | null;
   developerId: string;
   developerName: string;
   categorySlug: string;
@@ -318,7 +323,7 @@ export type AdminAppListItem = {
 };
 
 const ADMIN_APP_LIST_SELECT =
-  "id, slug, name, icon_color, developer_id, category_slug, version, size, status, downloads_count, created_at, developer:profiles!apps_developer_id_fkey(full_name)";
+  "id, slug, name, icon_color, icon_path, developer_id, category_slug, version, size, status, downloads_count, created_at, developer:profiles!apps_developer_id_fkey(full_name)";
 
 function mapAdminAppListRow(row: AdminAppListRow): AdminAppListItem {
   const developer = Array.isArray(row.developer) ? row.developer[0] : row.developer;
@@ -329,6 +334,7 @@ function mapAdminAppListRow(row: AdminAppListRow): AdminAppListItem {
     slug: row.slug,
     name: row.name,
     iconColor: row.icon_color,
+    iconUrl: getIconPublicUrl(row.icon_path),
     developerId: row.developer_id,
     developerName: developer?.full_name || "مطور سندك",
     categorySlug: row.category_slug,
@@ -378,7 +384,7 @@ export async function getAdminAppById(id: string): Promise<AdminAppDetail | unde
   const { data } = await supabase
     .from("apps")
     .select(
-      `id, slug, name, icon_color, developer_id, category_slug, version, size, status, downloads_count,
+      `id, slug, name, icon_color, icon_path, developer_id, category_slug, version, size, status, downloads_count,
        created_at, short_description, description, screenshots_count, apk_path, rejection_reason, reviewed_at,
        developer_full:profiles!apps_developer_id_fkey(full_name, email),
        reviewer:profiles!apps_reviewed_by_fkey(full_name)`
@@ -398,6 +404,7 @@ export async function getAdminAppById(id: string): Promise<AdminAppDetail | unde
     slug: row.slug,
     name: row.name,
     iconColor: row.icon_color,
+    iconUrl: getIconPublicUrl(row.icon_path),
     developerId: row.developer_id,
     developerName: developerFull?.full_name || "مطور سندك",
     developerEmail: developerFull?.email ?? null,
@@ -507,6 +514,23 @@ export async function getAdminDownloads(limit = 200): Promise<AdminDownload[]> {
       downloadedAt: row.downloaded_at,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// App screenshots
+// ---------------------------------------------------------------------------
+
+export async function getAppScreenshots(appId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("app_screenshots")
+    .select("storage_path")
+    .eq("app_id", appId)
+    .order("sort_order", { ascending: true });
+
+  return (data ?? [])
+    .map((row) => getIconPublicUrl(row.storage_path))
+    .filter((url): url is string => Boolean(url));
 }
 
 // ---------------------------------------------------------------------------
