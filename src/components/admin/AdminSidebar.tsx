@@ -2,21 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, AppWindow, UserCog, Users, Download, Flag, CreditCard, Settings, Store, ShieldCheck, FileSearch, ShieldAlert } from "lucide-react";
+import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, Bell, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Sanadak-focused admin nav. The old app-store admin pages
+// (/admin/apps, /admin/developers, /admin/downloads, /admin/reports,
+// /admin/payments, /admin/settings, /admin/security) still exist and work
+// unchanged -- they're just no longer the primary nav, reachable via the
+// "لوحة المتجر القديم" link below instead.
 const links = [
   { href: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
-  { href: "/admin/apps", label: "التطبيقات", icon: AppWindow },
-  { href: "/admin/security", label: "الأمان", icon: ShieldCheck },
+  { href: "/admin/devices", label: "الأجهزة", icon: Smartphone },
   { href: "/admin/devices/claims", label: "مطالبات الملكية", icon: FileSearch },
   { href: "/admin/devices/reports", label: "بلاغات الأجهزة", icon: ShieldAlert },
-  { href: "/admin/developers", label: "المطورون", icon: UserCog },
+  { href: "/admin/certificates", label: "الشهادات", icon: BadgeCheck },
+  { href: "/admin/dealers", label: "التجار", icon: Store },
+  { href: "/admin/notifications", label: "الإشعارات", icon: Bell },
+  { href: "/admin/audit", label: "سجل الأمان", icon: ShieldCheck },
   { href: "/admin/users", label: "المستخدمون", icon: Users },
-  { href: "/admin/downloads", label: "التحميلات", icon: Download },
-  { href: "/admin/reports", label: "البلاغات", icon: Flag },
-  { href: "/admin/payments", label: "المدفوعات", icon: CreditCard },
-  { href: "/admin/settings", label: "الإعدادات", icon: Settings },
 ];
 
 export function AdminSidebar({ adminName, adminEmail }: { adminName: string; adminEmail: string }) {
@@ -51,11 +54,11 @@ export function AdminSidebar({ adminName, adminEmail }: { adminName: string; adm
 
       <div className="border-t border-slate-100 p-4">
         <Link
-          href="/"
+          href="/admin/apps"
           className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-50"
         >
-          <Store className="h-5 w-5" />
-          العودة للمتجر
+          <LayoutDashboard className="h-5 w-5" />
+          لوحة المتجر القديم
         </Link>
       </div>
     </aside>

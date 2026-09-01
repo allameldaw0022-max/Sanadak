@@ -6,7 +6,7 @@ import type { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@/lib/
 import { computeDisplayState } from "@/lib/subscription";
 import { getIconPublicUrl } from "@/lib/utils";
 import { maskImei } from "@/lib/devices/imei-format";
-import type { Database } from "./database.types";
+import type { Database, Json } from "./database.types";
 
 type AppRow = {
   id: string;
@@ -1866,4 +1866,290 @@ export async function getMyCertificateById(ownerId: string, certificateId: strin
     deviceModel: device?.model ?? "—",
     valid,
   };
+}
+
+// --- Admin dashboard (Sanadak): device-wide stats, device management,
+// certificates, and security-event audit. Every read here is reachable
+// only via /admin (role-gated by the admin layout) and is backed by RLS's
+// own admin bypass on each table (devices_select_own_or_admin,
+// device_status_history_select_own_or_admin, device_certificates_select_own_or_admin,
+// security_events_select_own_or_admin) -- none of this widens what an
+// admin session can already read at the database level. Raw IMEI is never
+// selected here, only maskImei() output, matching the one-page-only
+// full-IMEI precedent from getMyDeviceById.
+
+export type AdminDeviceStats = {
+  totalDevices: number;
+  active: number;
+  underReview: number;
+  lost: number;
+  stolen: number;
+  recovered: number;
+  blocked: number;
+  pendingClaims: number;
+  pendingReports: number;
+  totalNotifications: number;
+  totalDealers: number;
+};
+
+export async function getAdminDeviceStats(): Promise<AdminDeviceStats> {
+  const supabase = await createClient();
+  const [devices, claims, reports, notifications, dealers] = await Promise.all([
+    supabase.from("devices").select("current_status"),
+    supabase.from("ownership_claims").select("id", { count: "exact", head: true }).not("status", "in", "(APPROVED,REJECTED)"),
+    supabase.from("device_reports").select("id", { count: "exact", head: true }).not("status", "in", "(APPROVED,REJECTED)"),
+    supabase.from("notifications").select("id", { count: "exact", head: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_dealer", true),
+  ]);
+
+  const byStatus = (devices.data ?? []).reduce<Record<string, number>>((acc, d) => {
+    acc[d.current_status] = (acc[d.current_status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    totalDevices: devices.data?.length ?? 0,
+    active: byStatus.ACTIVE ?? 0,
+    underReview: byStatus.UNDER_REVIEW ?? 0,
+    lost: byStatus.LOST ?? 0,
+    stolen: byStatus.STOLEN ?? 0,
+    recovered: byStatus.RECOVERED ?? 0,
+    blocked: byStatus.BLOCKED ?? 0,
+    pendingClaims: claims.count ?? 0,
+    pendingReports: reports.count ?? 0,
+    totalNotifications: notifications.count ?? 0,
+    totalDealers: dealers.count ?? 0,
+  };
+}
+
+export type AdminDeviceListItem = {
+  id: string;
+  brand: string;
+  model: string;
+  currentStatus: Database["public"]["Enums"]["device_status"];
+  ownerEmail: string | null;
+  createdAt: string;
+};
+
+export async function getAdminDevices(filter?: {
+  status?: Database["public"]["Enums"]["device_status"];
+}): Promise<AdminDeviceListItem[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("devices")
+    .select("id, brand, model, current_status, owner_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (filter?.status) query = query.eq("current_status", filter.status);
+
+  const { data: devices } = await query;
+  if (!devices || devices.length === 0) return [];
+
+  const { data: owners } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .in("id", devices.map((d) => d.owner_id));
+  const ownerById = new Map((owners ?? []).map((o) => [o.id, o]));
+
+  return devices.map((d) => ({
+    id: d.id,
+    brand: d.brand,
+    model: d.model,
+    currentStatus: d.current_status,
+    ownerEmail: ownerById.get(d.owner_id)?.email ?? null,
+    createdAt: d.created_at,
+  }));
+}
+
+export type AdminDeviceDetail = {
+  id: string;
+  brand: string;
+  model: string;
+  color: string | null;
+  serialNumber: string | null;
+  currentStatus: Database["public"]["Enums"]["device_status"];
+  ownerEmail: string | null;
+  imei1Masked: string;
+  imei2Masked: string | null;
+  createdAt: string;
+  updatedAt: string;
+  history: {
+    id: string;
+    oldStatus: Database["public"]["Enums"]["device_status"] | null;
+    newStatus: Database["public"]["Enums"]["device_status"];
+    reason: string | null;
+    source: string;
+    createdAt: string;
+  }[];
+};
+
+export async function getAdminDeviceById(deviceId: string): Promise<AdminDeviceDetail | null> {
+  const supabase = await createClient();
+  const { data: device } = await supabase
+    .from("devices")
+    .select("id, brand, model, color, serial_number, current_status, owner_id, created_at, updated_at")
+    .eq("id", deviceId)
+    .maybeSingle();
+
+  if (!device) return null;
+
+  const [{ data: owner }, { data: imeis }, { data: history }] = await Promise.all([
+    supabase.from("profiles").select("email").eq("id", device.owner_id).maybeSingle(),
+    supabase.from("device_imeis").select("imei_normalized, kind").eq("device_id", device.id),
+    supabase
+      .from("device_status_history")
+      .select("id, old_status, new_status, reason, source, created_at")
+      .eq("device_id", device.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const imei1 = (imeis ?? []).find((i) => i.kind === "imei1");
+  const imei2 = (imeis ?? []).find((i) => i.kind === "imei2");
+
+  return {
+    id: device.id,
+    brand: device.brand,
+    model: device.model,
+    color: device.color,
+    serialNumber: device.serial_number,
+    currentStatus: device.current_status,
+    ownerEmail: owner?.email ?? null,
+    imei1Masked: imei1 ? maskImei(imei1.imei_normalized) : "",
+    imei2Masked: imei2 ? maskImei(imei2.imei_normalized) : null,
+    createdAt: device.created_at,
+    updatedAt: device.updated_at,
+    history: (history ?? []).map((h) => ({
+      id: h.id,
+      oldStatus: h.old_status,
+      newStatus: h.new_status,
+      reason: h.reason,
+      source: h.source,
+      createdAt: h.created_at,
+    })),
+  };
+}
+
+export type AdminCertificateListItem = {
+  id: string;
+  deviceBrand: string;
+  deviceModel: string;
+  issuedToEmail: string | null;
+  issuedAt: string;
+  valid: boolean;
+};
+
+export async function getAdminCertificates(): Promise<AdminCertificateListItem[]> {
+  const supabase = await createClient();
+  const { data: certificates } = await supabase
+    .from("device_certificates")
+    .select("id, device_id, issued_to, issued_at")
+    .order("issued_at", { ascending: false })
+    .limit(200);
+
+  if (!certificates || certificates.length === 0) return [];
+
+  const [{ data: devices }, { data: owners }] = await Promise.all([
+    supabase
+      .from("devices")
+      .select("id, brand, model, owner_id, current_status")
+      .in("id", certificates.map((c) => c.device_id)),
+    supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", certificates.map((c) => c.issued_to)),
+  ]);
+
+  const deviceById = new Map((devices ?? []).map((d) => [d.id, d]));
+  const ownerById = new Map((owners ?? []).map((o) => [o.id, o]));
+
+  return certificates.map((c) => {
+    const device = deviceById.get(c.device_id);
+    const valid = !!device && device.owner_id === c.issued_to && ["ACTIVE", "RECOVERED"].includes(device.current_status);
+    return {
+      id: c.id,
+      deviceBrand: device?.brand ?? "—",
+      deviceModel: device?.model ?? "—",
+      issuedToEmail: ownerById.get(c.issued_to)?.email ?? null,
+      issuedAt: c.issued_at,
+      valid,
+    };
+  });
+}
+
+export type AdminNotificationItem = {
+  id: string;
+  userEmail: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export async function getAdminNotifications(): Promise<AdminNotificationItem[]> {
+  const supabase = await createClient();
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("id, user_id, type, title, body, read_at, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (!notifications || notifications.length === 0) return [];
+
+  const { data: users } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .in("id", notifications.map((n) => n.user_id));
+  const userById = new Map((users ?? []).map((u) => [u.id, u]));
+
+  return notifications.map((n) => ({
+    id: n.id,
+    userEmail: userById.get(n.user_id)?.email ?? null,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
+}
+
+export type AdminSecurityEventItem = {
+  id: string;
+  eventType: string;
+  actorEmail: string | null;
+  actorRole: string | null;
+  metadata: Json;
+  createdAt: string;
+};
+
+// Never includes appId/scanId join data (store-specific) -- this is a raw
+// chronological feed of security_events for admin audit, metadata is
+// exactly what logSecurityEvent() call sites already wrote (imei_hash
+// only, never a raw IMEI -- confirmed at every device Server Action call
+// site; nothing here changes what those call sites are allowed to log).
+export async function getAdminSecurityEvents(limit = 100): Promise<AdminSecurityEventItem[]> {
+  const supabase = await createClient();
+  const { data: events } = await supabase
+    .from("security_events")
+    .select("id, event_type, actor_id, actor_role, metadata, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (!events || events.length === 0) return [];
+
+  const actorIds = events.map((e) => e.actor_id).filter((id): id is string => !!id);
+  const { data: actors } = actorIds.length
+    ? await supabase.from("profiles").select("id, email").in("id", actorIds)
+    : { data: [] as { id: string; email: string | null }[] };
+  const actorById = new Map((actors ?? []).map((a) => [a.id, a]));
+
+  return events.map((e) => ({
+    id: e.id,
+    eventType: e.event_type,
+    actorEmail: e.actor_id ? (actorById.get(e.actor_id)?.email ?? null) : null,
+    actorRole: e.actor_role,
+    metadata: e.metadata,
+    createdAt: e.created_at,
+  }));
 }

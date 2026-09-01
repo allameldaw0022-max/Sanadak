@@ -7,6 +7,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 type OwnershipClaimStatus = Database["public"]["Enums"]["ownership_claim_status"];
 type DeviceReportStatus = Database["public"]["Enums"]["device_report_status"];
+type DeviceStatus = Database["public"]["Enums"]["device_status"];
 
 // Same defense-in-depth pattern as src/app/admin/actions.ts::requireAdmin --
 // review_ownership_claim/review_device_report already re-check
@@ -60,5 +61,33 @@ export async function reviewDeviceReportAction(
 
   revalidatePath("/admin/devices/reports");
   revalidatePath(`/admin/devices/reports/${reportId}`);
+  return { ok: true };
+}
+
+// transition_device_status (Phase 1) re-checks auth.role()='service_role'
+// or current_user_role()='admin' itself and enforces
+// is_valid_device_status_transition() server-side -- this action cannot
+// force an invalid or unauthorized transition regardless of what the
+// client sends. reason is stored in the immutable device_status_history
+// row (source='admin_dashboard').
+export async function transitionDeviceStatusAction(
+  deviceId: string,
+  newStatus: DeviceStatus,
+  reason?: string | null
+): Promise<ReviewResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("transition_device_status", {
+    p_device_id: deviceId,
+    p_new_status: newStatus,
+    p_reason: (reason ?? "").trim() || "",
+    p_source: "admin_dashboard",
+  });
+
+  if (error) return { ok: false, error: "تعذر تغيير حالة الجهاز، تأكد أن الانتقال مسموح به." };
+
+  revalidatePath("/admin/devices");
+  revalidatePath(`/admin/devices/${deviceId}`);
+  revalidatePath("/admin");
   return { ok: true };
 }
