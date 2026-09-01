@@ -29,7 +29,17 @@ export type SecurityEventType =
   | "ownership_claim_rate_limited"
   | "ownership_evidence_uploaded"
   | "ownership_evidence_upload_failed"
-  | "ownership_evidence_rate_limited";
+  | "ownership_evidence_rate_limited"
+  | "device_report_submitted"
+  | "device_report_failed"
+  | "device_report_rate_limited"
+  | "report_evidence_uploaded"
+  | "report_evidence_upload_failed"
+  | "report_evidence_rate_limited"
+  | "certificate_issued"
+  | "certificate_issue_failed"
+  | "batch_imei_check"
+  | "batch_imei_check_rate_limited";
 
 // Append-only audit trail. Never pass password/secret values in metadata —
 // callers must only pass non-sensitive, already-computed scan/report data.

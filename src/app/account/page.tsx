@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, LayoutDashboard, ShieldCheck, UserPlus, Smartphone } from "lucide-react";
+import { LogOut, LayoutDashboard, ShieldCheck, UserPlus, Smartphone, Bell, BadgeCheck, Store } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { getCurrentUser } from "@/lib/supabase/queries";
+import { getCurrentUser, getUnreadNotificationCount } from "@/lib/supabase/queries";
 import { signOutAction } from "@/app/auth/actions";
 
 export const metadata: Metadata = {
@@ -21,6 +21,7 @@ export default async function AccountPage() {
   if (!user) redirect("/login");
 
   const displayName = user.fullName || user.email || "مستخدم سندك";
+  const unreadCount = await getUnreadNotificationCount(user.id);
 
   return (
     <Container className="py-8 sm:py-12">
@@ -46,6 +47,39 @@ export default async function AccountPage() {
             <Smartphone className="h-4 w-4" />
             أجهزتي
           </Link>
+
+          <Link
+            href="/devices/certificates"
+            className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <BadgeCheck className="h-4 w-4" />
+            شهاداتي
+          </Link>
+
+          <Link
+            href="/account/notifications"
+            className="flex h-12 items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <span className="flex items-center gap-3">
+              <Bell className="h-4 w-4" />
+              الإشعارات
+            </span>
+            {unreadCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
+
+          {user.isDealer && (
+            <Link
+              href="/dealer"
+              className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-navy shadow-sm transition-colors hover:bg-slate-50"
+            >
+              <Store className="h-4 w-4" />
+              لوحة التاجر
+            </Link>
+          )}
 
           {user.role === "developer" && (
             <Link

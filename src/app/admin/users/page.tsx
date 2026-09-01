@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getAdminUsers } from "@/lib/supabase/queries";
+import { setDealerStatusAction } from "@/app/admin/actions";
 import { formatDate, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default async function AdminUsersPage() {
                   <th className="px-5 py-3 font-semibold">المستخدم</th>
                   <th className="px-5 py-3 font-semibold">البريد</th>
                   <th className="px-5 py-3 font-semibold">الدور</th>
+                  <th className="px-5 py-3 font-semibold">تاجر</th>
                   <th className="px-5 py-3 font-semibold">تاريخ التسجيل</th>
                 </tr>
               </thead>
@@ -58,6 +60,23 @@ export default async function AdminUsersPage() {
                       >
                         {roleLabels[user.role] ?? user.role}
                       </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <form action={setDealerStatusAction}>
+                        <input type="hidden" name="userId" value={user.id} />
+                        <input type="hidden" name="isDealer" value={(!user.isDealer).toString()} />
+                        <button
+                          type="submit"
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
+                            user.isDealer
+                              ? "bg-primary-light text-primary-dark hover:bg-primary/20"
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                          )}
+                        >
+                          {user.isDealer ? "نعم — إلغاء" : "لا — تفعيل"}
+                        </button>
+                      </form>
                     </td>
                     <td className="px-5 py-3 text-slate-500">{formatDate(user.createdAt)}</td>
                   </tr>

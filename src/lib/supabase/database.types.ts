@@ -461,6 +461,42 @@ export type Database = {
         }
         Relationships: []
       }
+      device_certificates: {
+        Row: {
+          device_id: string
+          id: string
+          issued_at: string
+          issued_to: string
+        }
+        Insert: {
+          device_id: string
+          id?: string
+          issued_at?: string
+          issued_to: string
+        }
+        Update: {
+          device_id?: string
+          id?: string
+          issued_at?: string
+          issued_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_certificates_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_certificates_issued_to_fkey"
+            columns: ["issued_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_imeis: {
         Row: {
           created_at: string
@@ -646,6 +682,50 @@ export type Database = {
           {
             foreignKeyName: "devices_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          read_at: string | null
+          related_id: string | null
+          related_table: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          related_id?: string | null
+          related_table?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          related_id?: string | null
+          related_table?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -911,6 +991,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_dealer: boolean
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -919,6 +1000,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_dealer?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -927,6 +1009,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_dealer?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -1197,6 +1280,7 @@ export type Database = {
         Returns: boolean
       }
       imei_luhn_valid: { Args: { p_imei: string }; Returns: boolean }
+      is_claimant_of_device: { Args: { p_device_id: string }; Returns: boolean }
       is_valid_device_status_transition: {
         Args: {
           p_new: Database["public"]["Enums"]["device_status"]
@@ -1259,6 +1343,15 @@ export type Database = {
           p_source: string
         }
         Returns: undefined
+      }
+      verify_certificate: {
+        Args: { p_certificate_id: string }
+        Returns: {
+          brand: string
+          issued_at: string
+          model: string
+          valid: boolean
+        }[]
       }
     }
     Enums: {

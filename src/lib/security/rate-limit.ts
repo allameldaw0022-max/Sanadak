@@ -49,7 +49,19 @@ export const RATE_LIMITS = {
   OWNERSHIP_CLAIM_SUBMIT_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 claim submissions/hour/user
   OWNERSHIP_CLAIM_SUBMIT_PER_IP: { limit: 20, windowSeconds: 60 * 60 }, // 20 claim submissions/hour/IP
   OWNERSHIP_EVIDENCE_UPLOAD_PER_USER: { limit: 20, windowSeconds: 60 * 60 }, // 20 evidence uploads/hour/user
+  DEVICE_REPORT_SUBMIT_PER_USER: { limit: 5, windowSeconds: 60 * 60 }, // 5 lost/stolen reports/hour/user
+  DEVICE_REPORT_SUBMIT_PER_IP: { limit: 10, windowSeconds: 60 * 60 }, // 10 lost/stolen reports/hour/IP
+  REPORT_EVIDENCE_UPLOAD_PER_USER: { limit: 20, windowSeconds: 60 * 60 }, // 20 report-evidence uploads/hour/user
+  CERTIFICATE_ISSUE_PER_USER: { limit: 20, windowSeconds: 60 * 60 }, // 20 certificate issuances/hour/user
+  BATCH_IMEI_CHECK_PER_USER: { limit: 10, windowSeconds: 60 * 60 }, // 10 batch calls/hour/user (each up to 20 IMEIs)
+  BATCH_IMEI_CHECK_PER_IP: { limit: 15, windowSeconds: 60 * 60 }, // 15 batch calls/hour/IP
 };
+
+// Hard cap on how many IMEIs one batch-check call may contain, independent
+// of the hourly rate limit above -- this is what stops a single request from
+// becoming a large synchronous load (spec: "لا تسمح للمستخدم الطبيعي أن يصنع
+// load كبير"), regardless of how much of the hourly budget remains.
+export const BATCH_IMEI_CHECK_MAX_ITEMS = 20;
 
 // Progressive delay for the public IMEI-check endpoint: as usage climbs
 // toward the hard rate-limit cutoff, add an increasing artificial delay

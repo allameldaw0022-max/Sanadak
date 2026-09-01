@@ -65,6 +65,7 @@ export type CurrentUser = {
   email: string | null;
   fullName: string | null;
   role: "user" | "developer" | "admin";
+  isDealer: boolean;
 };
 
 // Every layout/page on a route independently needs to know who's signed
@@ -83,7 +84,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, role")
+    .select("full_name, email, role, is_dealer")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -92,6 +93,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     email: profile?.email ?? user.email ?? null,
     fullName: profile?.full_name ?? null,
     role: profile?.role ?? "user",
+    isDealer: profile?.is_dealer ?? false,
   };
 });
 
@@ -467,6 +469,7 @@ export type AdminUserRow = {
   fullName: string;
   email: string;
   role: "user" | "developer" | "admin";
+  isDealer: boolean;
   createdAt: string;
 };
 
@@ -474,7 +477,7 @@ export async function getAdminUsers(): Promise<AdminUserRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, created_at")
+    .select("id, full_name, email, role, is_dealer, created_at")
     .order("created_at", { ascending: false });
 
   return (data ?? []).map((row) => ({
@@ -482,6 +485,7 @@ export async function getAdminUsers(): Promise<AdminUserRow[]> {
     fullName: row.full_name || "—",
     email: row.email || "",
     role: row.role,
+    isDealer: row.is_dealer,
     createdAt: row.created_at,
   }));
 }
@@ -1431,5 +1435,399 @@ export async function getMyClaimById(claimantId: string, claimId: string): Promi
     deviceModel: device?.model ?? "—",
     deviceColor: device?.color ?? null,
     evidence: evidenceWithUrls,
+  };
+}
+
+// --- Device reports (Phase 3, section 8-9): a report is only ever
+// submitted by the device's own current owner (see submitDeviceReportAction),
+// so listing "reports for my device" is scoped by owner_id the same way
+// getMyDeviceById already is -- RLS (device_reports_select_related) backs
+// this up regardless.
+
+export type DeviceReportListItem = {
+  id: string;
+  status: Database["public"]["Enums"]["device_report_status"];
+  reportType: Database["public"]["Enums"]["device_report_type"];
+  createdAt: string;
+};
+
+export async function getDeviceReportsForDevice(ownerId: string, deviceId: string): Promise<DeviceReportListItem[]> {
+  const supabase = await createClient();
+  const { data: device } = await supabase
+    .from("devices")
+    .select("id")
+    .eq("id", deviceId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+  if (!device) return [];
+
+  const { data } = await supabase
+    .from("device_reports")
+    .select("id, status, report_type, created_at")
+    .eq("device_id", deviceId)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    status: r.status,
+    reportType: r.report_type,
+    createdAt: r.created_at,
+  }));
+}
+
+export type MyReportDetail = {
+  id: string;
+  status: Database["public"]["Enums"]["device_report_status"];
+  reportType: Database["public"]["Enums"]["device_report_type"];
+  details: string | null;
+  adminNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+  evidence: { id: string; signedUrl: string | null; createdAt: string }[];
+};
+
+export async function getMyReportById(reporterId: string, reportId: string): Promise<MyReportDetail | null> {
+  const supabase = await createClient();
+  const { data: report } = await supabase
+    .from("device_reports")
+    .select("id, status, report_type, details, admin_note, created_at, updated_at, device_id")
+    .eq("id", reportId)
+    .eq("reporter_id", reporterId)
+    .maybeSingle();
+
+  if (!report) return null;
+
+  const [{ data: device }, { data: evidence }] = await Promise.all([
+    supabase.from("devices").select("brand, model").eq("id", report.device_id).maybeSingle(),
+    supabase
+      .from("report_evidence")
+      .select("id, storage_path, created_at")
+      .eq("report_id", report.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const evidenceWithUrls = await Promise.all(
+    (evidence ?? []).map(async (e) => {
+      const { data: signed } = await supabase.storage.from("report-evidence").createSignedUrl(e.storage_path, 300);
+      return { id: e.id, signedUrl: signed?.signedUrl ?? null, createdAt: e.created_at };
+    })
+  );
+
+  return {
+    id: report.id,
+    status: report.status,
+    reportType: report.report_type,
+    details: report.details,
+    adminNote: report.admin_note,
+    createdAt: report.created_at,
+    updatedAt: report.updated_at,
+    deviceBrand: device?.brand ?? "—",
+    deviceModel: device?.model ?? "—",
+    evidence: evidenceWithUrls,
+  };
+}
+
+// --- Admin (Phase 3, section 10): claims/reports review lists + detail.
+// Reachable only through admin-gated pages; RLS (ownership_claims/
+// device_reports/*_select_related, ownership_evidence/report_evidence
+// *_select_related) already grants admin visibility on every row here
+// regardless of relation to the admin's own account.
+
+export type AdminClaimListItem = {
+  id: string;
+  status: Database["public"]["Enums"]["ownership_claim_status"];
+  createdAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+  claimantEmail: string | null;
+};
+
+export async function getAdminOwnershipClaims(): Promise<AdminClaimListItem[]> {
+  const supabase = await createClient();
+  const { data: claims } = await supabase
+    .from("ownership_claims")
+    .select("id, status, created_at, device_id, claimant_id")
+    .order("created_at", { ascending: false });
+
+  if (!claims || claims.length === 0) return [];
+
+  const [{ data: devices }, { data: claimants }] = await Promise.all([
+    supabase
+      .from("devices")
+      .select("id, brand, model")
+      .in("id", claims.map((c) => c.device_id)),
+    supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", claims.map((c) => c.claimant_id)),
+  ]);
+
+  const deviceById = new Map((devices ?? []).map((d) => [d.id, d]));
+  const claimantById = new Map((claimants ?? []).map((p) => [p.id, p]));
+
+  return claims.map((c) => ({
+    id: c.id,
+    status: c.status,
+    createdAt: c.created_at,
+    deviceBrand: deviceById.get(c.device_id)?.brand ?? "—",
+    deviceModel: deviceById.get(c.device_id)?.model ?? "—",
+    claimantEmail: claimantById.get(c.claimant_id)?.email ?? null,
+  }));
+}
+
+export type AdminClaimDetail = MyClaimDetail & { claimantEmail: string | null };
+
+export async function getAdminClaimById(claimId: string): Promise<AdminClaimDetail | null> {
+  const supabase = await createClient();
+  const { data: claim } = await supabase
+    .from("ownership_claims")
+    .select("id, status, note, rejection_reason, created_at, updated_at, device_id, claimant_id")
+    .eq("id", claimId)
+    .maybeSingle();
+
+  if (!claim) return null;
+
+  const [{ data: device }, { data: claimant }, { data: evidence }] = await Promise.all([
+    supabase.from("devices").select("brand, model, color").eq("id", claim.device_id).maybeSingle(),
+    supabase.from("profiles").select("email").eq("id", claim.claimant_id).maybeSingle(),
+    supabase
+      .from("ownership_evidence")
+      .select("id, storage_path, created_at")
+      .eq("claim_id", claim.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const evidenceWithUrls = await Promise.all(
+    (evidence ?? []).map(async (e) => {
+      const { data: signed } = await supabase.storage
+        .from("ownership-evidence")
+        .createSignedUrl(e.storage_path, 300);
+      return { id: e.id, signedUrl: signed?.signedUrl ?? null, createdAt: e.created_at };
+    })
+  );
+
+  return {
+    id: claim.id,
+    status: claim.status,
+    note: claim.note,
+    rejectionReason: claim.rejection_reason,
+    createdAt: claim.created_at,
+    updatedAt: claim.updated_at,
+    deviceBrand: device?.brand ?? "—",
+    deviceModel: device?.model ?? "—",
+    deviceColor: device?.color ?? null,
+    claimantEmail: claimant?.email ?? null,
+    evidence: evidenceWithUrls,
+  };
+}
+
+export type AdminReportListItem = {
+  id: string;
+  status: Database["public"]["Enums"]["device_report_status"];
+  reportType: Database["public"]["Enums"]["device_report_type"];
+  createdAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+  reporterEmail: string | null;
+};
+
+export async function getAdminDeviceReports(): Promise<AdminReportListItem[]> {
+  const supabase = await createClient();
+  const { data: reports } = await supabase
+    .from("device_reports")
+    .select("id, status, report_type, created_at, device_id, reporter_id")
+    .order("created_at", { ascending: false });
+
+  if (!reports || reports.length === 0) return [];
+
+  const [{ data: devices }, { data: reporters }] = await Promise.all([
+    supabase
+      .from("devices")
+      .select("id, brand, model")
+      .in("id", reports.map((r) => r.device_id)),
+    supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", reports.map((r) => r.reporter_id)),
+  ]);
+
+  const deviceById = new Map((devices ?? []).map((d) => [d.id, d]));
+  const reporterById = new Map((reporters ?? []).map((p) => [p.id, p]));
+
+  return reports.map((r) => ({
+    id: r.id,
+    status: r.status,
+    reportType: r.report_type,
+    createdAt: r.created_at,
+    deviceBrand: deviceById.get(r.device_id)?.brand ?? "—",
+    deviceModel: deviceById.get(r.device_id)?.model ?? "—",
+    reporterEmail: reporterById.get(r.reporter_id)?.email ?? null,
+  }));
+}
+
+export type AdminReportDetail = MyReportDetail & { reporterEmail: string | null };
+
+export async function getAdminReportById(reportId: string): Promise<AdminReportDetail | null> {
+  const supabase = await createClient();
+  const { data: report } = await supabase
+    .from("device_reports")
+    .select("id, status, report_type, details, admin_note, created_at, updated_at, device_id, reporter_id")
+    .eq("id", reportId)
+    .maybeSingle();
+
+  if (!report) return null;
+
+  const [{ data: device }, { data: reporter }, { data: evidence }] = await Promise.all([
+    supabase.from("devices").select("brand, model").eq("id", report.device_id).maybeSingle(),
+    supabase.from("profiles").select("email").eq("id", report.reporter_id).maybeSingle(),
+    supabase
+      .from("report_evidence")
+      .select("id, storage_path, created_at")
+      .eq("report_id", report.id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const evidenceWithUrls = await Promise.all(
+    (evidence ?? []).map(async (e) => {
+      const { data: signed } = await supabase.storage.from("report-evidence").createSignedUrl(e.storage_path, 300);
+      return { id: e.id, signedUrl: signed?.signedUrl ?? null, createdAt: e.created_at };
+    })
+  );
+
+  return {
+    id: report.id,
+    status: report.status,
+    reportType: report.report_type,
+    details: report.details,
+    adminNote: report.admin_note,
+    createdAt: report.created_at,
+    updatedAt: report.updated_at,
+    deviceBrand: device?.brand ?? "—",
+    deviceModel: device?.model ?? "—",
+    reporterEmail: reporter?.email ?? null,
+    evidence: evidenceWithUrls,
+  };
+}
+
+// --- Notifications (Phase 3, section 11): read-only queries for the
+// current user's own notifications. RLS (notifications_select_own) scopes
+// every row to user_id = auth.uid() regardless of this explicit filter.
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  relatedTable: string | null;
+  relatedId: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export async function getMyNotifications(userId: string): Promise<NotificationItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("notifications")
+    .select("id, type, title, body, related_table, related_id, read_at, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  return (data ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    relatedTable: n.related_table,
+    relatedId: n.related_id,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
+}
+
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("read_at", null);
+  return count ?? 0;
+}
+
+// --- Certificates (Phase 4, section 12): a certificate's "valid" flag is
+// computed the exact same way here as in verify_certificate (device row
+// still owned by whoever it was issued to, and in an ACTIVE/RECOVERED
+// state) -- if the underlying device is no longer visible to this owner at
+// all (e.g. ownership since transferred away), it's treated as invalid,
+// which is the correct outcome either way.
+
+export type MyCertificateListItem = {
+  id: string;
+  issuedAt: string;
+  deviceBrand: string;
+  deviceModel: string;
+  valid: boolean;
+};
+
+export async function getMyCertificates(ownerId: string): Promise<MyCertificateListItem[]> {
+  const supabase = await createClient();
+  const { data: certificates } = await supabase
+    .from("device_certificates")
+    .select("id, issued_at, device_id, issued_to")
+    .eq("issued_to", ownerId)
+    .order("issued_at", { ascending: false });
+
+  if (!certificates || certificates.length === 0) return [];
+
+  const { data: devices } = await supabase
+    .from("devices")
+    .select("id, brand, model, owner_id, current_status")
+    .in("id", certificates.map((c) => c.device_id));
+
+  const deviceById = new Map((devices ?? []).map((d) => [d.id, d]));
+
+  return certificates.map((c) => {
+    const device = deviceById.get(c.device_id);
+    const valid = !!device && device.owner_id === c.issued_to && ["ACTIVE", "RECOVERED"].includes(device.current_status);
+    return {
+      id: c.id,
+      issuedAt: c.issued_at,
+      deviceBrand: device?.brand ?? "—",
+      deviceModel: device?.model ?? "—",
+      valid,
+    };
+  });
+}
+
+export type MyCertificateDetail = MyCertificateListItem;
+
+export async function getMyCertificateById(ownerId: string, certificateId: string): Promise<MyCertificateDetail | null> {
+  const supabase = await createClient();
+  const { data: certificate } = await supabase
+    .from("device_certificates")
+    .select("id, issued_at, device_id, issued_to")
+    .eq("id", certificateId)
+    .eq("issued_to", ownerId)
+    .maybeSingle();
+
+  if (!certificate) return null;
+
+  const { data: device } = await supabase
+    .from("devices")
+    .select("brand, model, owner_id, current_status")
+    .eq("id", certificate.device_id)
+    .maybeSingle();
+
+  const valid = !!device && device.owner_id === certificate.issued_to && ["ACTIVE", "RECOVERED"].includes(device.current_status);
+
+  return {
+    id: certificate.id,
+    issuedAt: certificate.issued_at,
+    deviceBrand: device?.brand ?? "—",
+    deviceModel: device?.model ?? "—",
+    valid,
   };
 }

@@ -55,6 +55,17 @@ export async function updateReportAction(formData: FormData) {
   revalidatePath("/admin/reports");
 }
 
+export async function setDealerStatusAction(formData: FormData) {
+  await requireAdmin();
+  const userId = formData.get("userId") as string;
+  const isDealer = formData.get("isDealer") === "true";
+
+  const supabase = await createClient();
+  await supabase.from("profiles").update({ is_dealer: isDealer }).eq("id", userId);
+
+  revalidatePath("/admin/users");
+}
+
 export async function rejectAppAction(formData: FormData) {
   const admin = await requireAdmin();
   const appId = formData.get("appId") as string;
