@@ -40,3 +40,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Android/TWA (android/) -- signing keys and machine-local build state must
+# never be committed. The generated project source itself is intentionally
+# left untracked until explicitly approved for commit.
+android/*.keystore
+android/*.jks
+android/local.properties
+android/keystore.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/*/build/
+android/node_modules/
+
