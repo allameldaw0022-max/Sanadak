@@ -780,10 +780,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      approve_payment_request: {
-        Args: { p_admin_note?: string; p_request_id: string }
-        Returns: undefined
-      }
       check_and_increment_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: {
@@ -791,25 +787,10 @@ export type Database = {
           current_count: number
         }[]
       }
-      create_payment_request: {
-        Args: {
-          p_note?: string
-          p_payer_name: string
-          p_plan: Database["public"]["Enums"]["subscription_plan"]
-          p_proof_path: string
-          p_transaction_reference: string
-          p_transfer_date: string
-        }
-        Returns: string
-      }
       current_user_is_dealer: { Args: never; Returns: boolean }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
-      }
-      developer_can_add_app: {
-        Args: { p_developer_id: string }
-        Returns: boolean
       }
       imei_luhn_valid: { Args: { p_imei: string }; Returns: boolean }
       is_claimant_of_device: { Args: { p_device_id: string }; Returns: boolean }
@@ -839,10 +820,6 @@ export type Database = {
         }
         Returns: string
       }
-      reject_payment_request: {
-        Args: { p_admin_note: string; p_request_id: string }
-        Returns: undefined
-      }
       review_device_report: {
         Args: {
           p_admin_note?: string
@@ -870,10 +847,6 @@ export type Database = {
       submit_ownership_claim: {
         Args: { p_imei_hash: string; p_note?: string }
         Returns: string
-      }
-      sync_subscription_status: {
-        Args: { p_developer_id: string }
-        Returns: undefined
       }
       transition_device_status: {
         Args: {
