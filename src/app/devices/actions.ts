@@ -90,17 +90,14 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
   if (!validated.ok) return { ok: false, error: validated.error };
   const { brand, model, color, serialNumber, imei1Normalized, imei2Normalized } = validated.data;
 
-  let imei1Hash: string;
-  let imei2Hash: string | null;
-  try {
-    imei1Hash = hashImei(imei1Normalized);
-    imei2Hash = imei2Normalized ? hashImei(imei2Normalized) : null;
-  } catch {
-    // IMEI_HASH_SECRET missing -- fail closed, never fall back to storing
-    // an unhashed/weakly-hashed value.
-    return { ok: false, error: "تعذر تسجيل الجهاز حاليًا، حاول لاحقًا." };
-  }
-
+  // SEC-07: imei_hash is no longer computed here and never leaves this
+  // server for the register path. register_device() (the 6-parameter
+  // SECURITY DEFINER signature) derives the HMAC itself, inside Postgres,
+  // straight from the Vault-held secret -- so a caller (this action, or
+  // anyone hitting the RPC directly with a valid session) can no longer
+  // submit a forged imei_hash that doesn't match imei_normalized.
+  // hashImei()/IMEI_HASH_SECRET are still used below, only by
+  // checkImeiAction's read-only lookup path.
   const { data, error } = await supabase.rpc("register_device", {
     p_brand: brand,
     p_model: model,
@@ -113,9 +110,7 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
     p_color: (color ?? null) as unknown as string,
     p_serial_number: (serialNumber ?? null) as unknown as string,
     p_imei1_normalized: imei1Normalized,
-    p_imei1_hash: imei1Hash,
     p_imei2_normalized: imei2Normalized ?? undefined,
-    p_imei2_hash: imei2Hash ?? undefined,
   });
 
   if (error || !data) {
@@ -124,7 +119,7 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
       eventType: "device_registration_failed",
       actorId: user.id,
       actorRole: "authenticated",
-      metadata: { imei1_hash: imei1Hash, db_error_code: error?.code ?? null, limit_reached: !!limitMessage },
+      metadata: { db_error_code: error?.code ?? null, limit_reached: !!limitMessage },
     });
     if (limitMessage) {
       return { ok: false, error: limitMessage.message, limitReached: true, ctaLabel: limitMessage.ctaLabel };
@@ -134,7 +129,8 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
     // any other failure in the response -- both a duplicate IMEI and an
     // unrelated DB error must look identical to the caller (see spec: a
     // distinct "this IMEI belongs to someone else" message is itself a
-    // privacy leak). Never log the raw IMEI -- only its hash.
+    // privacy leak). Never log the raw IMEI -- and the hash itself is no
+    // longer known to this action at all, so there is nothing to log.
     return { ok: false, error: GENERIC_REGISTRATION_FAILURE };
   }
 
@@ -142,7 +138,7 @@ export async function registerDeviceAction(input: DeviceRegistrationInput): Prom
     eventType: "device_registered",
     actorId: user.id,
     actorRole: "authenticated",
-    metadata: { device_id: data, imei1_hash: imei1Hash },
+    metadata: { device_id: data },
   });
 
   return { ok: true, deviceId: data };

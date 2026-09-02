@@ -807,19 +807,31 @@ export type Database = {
           status: Database["public"]["Enums"]["device_status"]
         }[]
       }
-      register_device: {
-        Args: {
-          p_brand: string
-          p_color: string
-          p_imei1_hash: string
-          p_imei1_normalized: string
-          p_imei2_hash?: string
-          p_imei2_normalized?: string
-          p_model: string
-          p_serial_number: string
-        }
-        Returns: string
-      }
+      register_device:
+        | {
+            Args: {
+              p_brand: string
+              p_color: string
+              p_imei1_hash: string
+              p_imei1_normalized: string
+              p_imei2_hash?: string
+              p_imei2_normalized?: string
+              p_model: string
+              p_serial_number: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_brand: string
+              p_color: string
+              p_imei1_normalized: string
+              p_imei2_normalized?: string
+              p_model: string
+              p_serial_number: string
+            }
+            Returns: string
+          }
       review_device_report: {
         Args: {
           p_admin_note?: string
