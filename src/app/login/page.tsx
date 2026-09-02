@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { LogIn, UserPlus, CheckCircle2, AlertCircle } from "lucide-react";
@@ -154,6 +155,11 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
               />
+              {mode === "signin" && (
+                <Link href="/forgot-password" className="mt-1.5 inline-block text-xs font-semibold text-primary hover:underline">
+                  نسيت كلمة المرور؟
+                </Link>
+              )}
             </div>
 
             {error && (
