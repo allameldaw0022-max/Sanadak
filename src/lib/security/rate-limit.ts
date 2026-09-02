@@ -4,37 +4,37 @@ import { createServiceClient } from "@/lib/supabase/service";
 // Fixed-window counter backed by security_rate_limits (service-role only,
 // no RLS policy grants it to anon/authenticated at all). Works across
 // serverless invocations, unlike an in-memory counter.
+//
+// The increment-and-compare happens atomically inside a single Postgres
+// statement (check_and_increment_rate_limit: INSERT ... ON CONFLICT DO
+// UPDATE ... RETURNING), serialized by Postgres's row-level locking on the
+// unique `key` column -- concurrent/parallel callers for the same key can
+// no longer under-count each other the way a separate SELECT-then-UPDATE
+// could. The same RPC also backs the DB-level throttle embedded directly
+// inside public_check_device_status(), so this file and that RPC always
+// enforce limits consistently no matter which entry point is used.
 export async function checkRateLimit(
   key: string,
   limit: number,
   windowSeconds: number
 ): Promise<{ allowed: boolean; remaining: number }> {
   const supabase = createServiceClient();
-  const now = new Date();
 
-  const { data: existing } = await supabase
-    .from("security_rate_limits")
-    .select("window_start, count")
-    .eq("key", key)
-    .maybeSingle();
+  const { data, error } = await supabase
+    .rpc("check_and_increment_rate_limit", {
+      p_key: key,
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    })
+    .single();
 
-  if (!existing || now.getTime() - new Date(existing.window_start).getTime() > windowSeconds * 1000) {
-    await supabase
-      .from("security_rate_limits")
-      .upsert({ key, window_start: now.toISOString(), count: 1 });
-    return { allowed: true, remaining: limit - 1 };
-  }
-
-  if (existing.count >= limit) {
+  if (error || !data) {
+    // Fail closed: if the atomic check itself errors, treat the request as
+    // not allowed rather than silently letting it through.
     return { allowed: false, remaining: 0 };
   }
 
-  await supabase
-    .from("security_rate_limits")
-    .update({ count: existing.count + 1 })
-    .eq("key", key);
-
-  return { allowed: true, remaining: limit - existing.count - 1 };
+  return { allowed: data.allowed, remaining: Math.max(limit - data.current_count, 0) };
 }
 
 export const RATE_LIMITS = {
