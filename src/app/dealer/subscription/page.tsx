@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CreditCard, Smartphone } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { SubscriptionRequestForm } from "@/components/devices/SubscriptionRequestForm";
 import { SubscriptionRequestStatusBadge } from "@/components/devices/SubscriptionRequestStatusBadge";
+import { PlanStatusCard } from "@/components/devices/PlanStatusCard";
 import { DealerProfileForm } from "@/components/devices/DealerProfileForm";
 import {
   getCurrentUser,
@@ -14,7 +16,7 @@ import {
   getMySubscriptionRequests,
   getMyDealerProfile,
 } from "@/lib/supabase/queries";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "اشتراكي | سندك",
@@ -43,33 +45,10 @@ export default async function DealerSubscriptionPage() {
     <Container className="py-8 sm:py-12">
       <SectionHeader title="اشتراكي" subtitle="إدارة اشتراك حسابك التجاري وحد الأجهزة المسموح به" />
 
-      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        {status ? (
-          <div>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-extrabold text-navy">{status.planName}</p>
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-                  status.isCurrentlyActive ? "bg-primary-light text-primary-dark" : "bg-red-50 text-red-600"
-                )}
-              >
-                {status.isCurrentlyActive ? "فعال" : "منتهي"}
-              </span>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-              <Smartphone className="h-4 w-4" />
-              الاستخدام: {status.usedDevices} / {status.maxDevices} جهاز
-            </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className={cn("h-full rounded-full", status.usedDevices >= status.maxDevices ? "bg-red-500" : "bg-primary")}
-                style={{ width: `${Math.min(100, (status.usedDevices / Math.max(1, status.maxDevices)) * 100)}%` }}
-              />
-            </div>
-            <p className="mt-3 text-xs text-slate-500">ينتهي الاشتراك في {formatDate(status.expiresAt)}</p>
-          </div>
-        ) : (
+      {status ? (
+        <PlanStatusCard status={status} />
+      ) : (
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <CreditCard className="h-8 w-8 text-slate-300" />
             <div>
@@ -79,15 +58,20 @@ export default async function DealerSubscriptionPage() {
               </p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div id="subscribe-form" className="mb-8 scroll-mt-20 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-sm font-extrabold text-navy">طلب اشتراك جديد</h2>
         {hasPendingRequest ? (
           <p className="text-sm text-amber-700">لديك طلب اشتراك قيد المراجعة حاليًا. سيصلك إشعار فور البت فيه.</p>
         ) : (
-          <SubscriptionRequestForm plans={plans} paymentMethods={paymentMethods} currentPlanId={status?.planId} />
+          <SubscriptionRequestForm
+            plans={plans}
+            paymentMethods={paymentMethods}
+            currentPlanId={status?.planId}
+            hasActiveSubscription={!!status?.isCurrentlyActive}
+          />
         )}
       </div>
 
@@ -112,11 +96,20 @@ export default async function DealerSubscriptionPage() {
                   <p className="text-sm font-bold text-navy">{r.planName}</p>
                   <SubscriptionRequestStatusBadge status={r.status} />
                 </div>
-                <p className="mt-1 text-xs text-slate-500" dir="ltr">
-                  {r.amountSdg.toLocaleString("ar-SD")} SDG — {formatDate(r.createdAt)}
+                <p className="mt-1 text-xs text-slate-500">
+                  <span dir="ltr">{r.amountSdg.toLocaleString("ar-SD")} SDG</span> — حتى {r.maxDevicesSnapshot} جهاز —{" "}
+                  {formatDate(r.createdAt)}
                 </p>
-                {r.status === "rejected" && r.rejectionReason && (
-                  <p className="mt-2 text-xs text-red-600">سبب الرفض: {r.rejectionReason}</p>
+                {r.status === "rejected" && (
+                  <div className="mt-2">
+                    {r.rejectionReason && <p className="text-xs text-red-600">سبب الرفض: {r.rejectionReason}</p>}
+                    <Link
+                      href="#subscribe-form"
+                      className="mt-1.5 inline-block text-xs font-semibold text-primary hover:underline"
+                    >
+                      أعد المحاولة
+                    </Link>
+                  </div>
                 )}
               </div>
             ))}

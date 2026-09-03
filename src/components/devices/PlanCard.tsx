@@ -7,11 +7,17 @@ export function PlanCard({
   selected,
   isCurrentPlan,
   onSelect,
+  ctaLabel,
 }: {
   plan: SubscriptionPlanItem;
   selected: boolean;
   isCurrentPlan: boolean;
   onSelect: () => void;
+  // Optional override for the not-selected/not-current button label -- e.g.
+  // "الترقية إلى ..." when the dealer already has an active subscription on
+  // a lower-tier plan. Falls back to the existing "اشترك الآن" wording.
+  // Selecting the plan still always shows "الخطة المختارة" regardless.
+  ctaLabel?: string;
 }) {
   return (
     <div
@@ -66,7 +72,7 @@ export function PlanCard({
               selected ? "bg-primary text-white hover:bg-primary-dark" : "bg-primary-light text-primary-dark hover:bg-primary/20"
             )}
           >
-            {selected ? "الخطة المختارة" : "اشترك الآن"}
+            {selected ? "الخطة المختارة" : (ctaLabel ?? "اشترك الآن")}
           </button>
         )}
       </div>

@@ -1063,6 +1063,13 @@ export async function getActivePaymentMethods(): Promise<PaymentMethodItem[]> {
 export type DealerSubscriptionStatus = {
   planId: string;
   planName: string;
+  // The plan's CURRENT live price/billing interval (for display only, e.g.
+  // "خطتي" card) -- distinct from max_devices_snapshot below, which stays
+  // the value captured at approval time and is what's actually enforced.
+  // Showing the live price here doesn't change what the dealer is charged
+  // (billing already happened at approval) or re-derive any enforced limit.
+  monthlyPriceSdg: number;
+  billingInterval: string;
   maxDevices: number;
   usedDevices: number;
   status: Database["public"]["Enums"]["dealer_subscription_status"];
@@ -1081,13 +1088,19 @@ export async function getMyDealerSubscriptionStatus(dealerId: string): Promise<D
   if (!sub) return null;
 
   const [{ data: plan }, { count }] = await Promise.all([
-    supabase.from("subscription_plans").select("name").eq("id", sub.plan_id).maybeSingle(),
+    supabase
+      .from("subscription_plans")
+      .select("name, monthly_price_sdg, billing_interval")
+      .eq("id", sub.plan_id)
+      .maybeSingle(),
     supabase.from("devices").select("id", { count: "exact", head: true }).eq("owner_id", dealerId),
   ]);
 
   return {
     planId: sub.plan_id,
     planName: plan?.name ?? "—",
+    monthlyPriceSdg: plan?.monthly_price_sdg ?? 0,
+    billingInterval: plan?.billing_interval ?? "monthly",
     maxDevices: sub.max_devices_snapshot,
     usedDevices: count ?? 0,
     status: sub.status,
@@ -1100,6 +1113,10 @@ export type MySubscriptionRequestItem = {
   id: string;
   planName: string;
   amountSdg: number;
+  // The device-limit SEC-01 snapshotted at submit time (see
+  // protect_dealer_subscription_request_snapshot) -- a read-only display of
+  // an existing column, not a re-derivation from the live plan.
+  maxDevicesSnapshot: number;
   status: Database["public"]["Enums"]["dealer_subscription_request_status"];
   rejectionReason: string | null;
   createdAt: string;
@@ -1109,7 +1126,7 @@ export async function getMySubscriptionRequests(dealerId: string): Promise<MySub
   const supabase = await createClient();
   const { data: requests } = await supabase
     .from("dealer_subscription_requests")
-    .select("id, plan_id, amount_sdg, status, rejection_reason, created_at")
+    .select("id, plan_id, amount_sdg, max_devices_snapshot, status, rejection_reason, created_at")
     .eq("dealer_id", dealerId)
     .order("created_at", { ascending: false });
 
@@ -1125,6 +1142,7 @@ export async function getMySubscriptionRequests(dealerId: string): Promise<MySub
     id: r.id,
     planName: planById.get(r.plan_id)?.name ?? "—",
     amountSdg: r.amount_sdg,
+    maxDevicesSnapshot: r.max_devices_snapshot,
     status: r.status,
     rejectionReason: r.rejection_reason,
     createdAt: r.created_at,

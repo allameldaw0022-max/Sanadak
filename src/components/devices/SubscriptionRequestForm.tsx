@@ -21,10 +21,15 @@ export function SubscriptionRequestForm({
   plans,
   paymentMethods,
   currentPlanId,
+  hasActiveSubscription = false,
 }: {
   plans: SubscriptionPlanItem[];
   paymentMethods: PaymentMethodItem[];
   currentPlanId?: string | null;
+  // Display-only: decides whether a non-current plan's button reads
+  // "الترقية إلى ..." instead of "اشترك الآن" -- never touches which plan
+  // gets selected or what submitSubscriptionRequestAction receives.
+  hasActiveSubscription?: boolean;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,9 +37,11 @@ export function SubscriptionRequestForm({
   const [paymentMethodId, setPaymentMethodId] = useState<string | null>(paymentMethods[0]?.id ?? null);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const selectedMethod = paymentMethods.find((m) => m.id === paymentMethodId);
+  const currentPlan = plans.find((p) => p.id === currentPlanId);
 
   function handleFile(f: File) {
     const quickError = quickCheck(f);
@@ -58,8 +65,23 @@ export function SubscriptionRequestForm({
         setError(result.error);
         return;
       }
-      router.refresh();
+      // Show the success confirmation immediately, then let the page catch
+      // up to the new "طلب قيد المراجعة" state a moment later -- without the
+      // delay, router.refresh() would swap this form out for that message
+      // before the user has a chance to read the success text at all.
+      setSubmitted(true);
+      setTimeout(() => router.refresh(), 1600);
     });
+  }
+
+  if (submitted) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-primary/20 bg-primary-light/30 px-4 py-6 text-center">
+        <CheckCircle2 className="h-6 w-6 text-primary" />
+        <p className="text-sm font-bold text-navy">تم إرسال طلب الاشتراك بنجاح</p>
+        <p className="text-xs text-slate-600">سيصلك إشعار فور مراجعته.</p>
+      </div>
+    );
   }
 
   if (plans.length === 0) {
@@ -72,15 +94,24 @@ export function SubscriptionRequestForm({
         <h3 className="text-lg font-extrabold text-navy">اختر الباقة المناسبة لنشاطك</h3>
         <p className="mt-1 mb-4 text-sm text-slate-500">ابدأ بإدارة أجهزتك وتوثيقها بسهولة مع سندك.</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {plans.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              selected={planId === plan.id}
-              isCurrentPlan={currentPlanId === plan.id}
-              onSelect={() => setPlanId(plan.id)}
-            />
-          ))}
+          {plans.map((plan) => {
+            // "الترقية إلى ..." only when there's an active subscription and
+            // this plan actually offers a higher device limit than it --
+            // otherwise PlanCard's own default ("اشترك الآن") applies. Pure
+            // display label; doesn't affect selection or what gets submitted.
+            const isUpgrade =
+              hasActiveSubscription && currentPlan != null && plan.maxDevices > currentPlan.maxDevices;
+            return (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                selected={planId === plan.id}
+                isCurrentPlan={currentPlanId === plan.id}
+                onSelect={() => setPlanId(plan.id)}
+                ctaLabel={isUpgrade ? `الترقية إلى ${plan.name}` : undefined}
+              />
+            );
+          })}
         </div>
       </div>
 

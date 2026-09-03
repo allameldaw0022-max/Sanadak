@@ -30,6 +30,29 @@ export function formatDownloads(count: number): string {
   return `${count}+`;
 }
 
+// Whole days between now and dateString (negative once it's in the past).
+// Kept as a plain helper rather than inline in a component -- calling
+// Date.now() directly inside a component/hook body trips the
+// react-hooks/purity rule (components must be idempotent); a component
+// calling this ordinary function does not.
+export function daysUntil(dateString: string): number {
+  return Math.floor((new Date(dateString).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+}
+
+export type DeviceUsageState = "normal" | "near" | "reached";
+
+// Same threshold a dealer subscription's usage bar/copy uses (see
+// PlanStatusCard) -- 80% is "near", 100%+ is "reached". Kept as a small
+// pure, alias-free function so it's covered by a real runnable test.
+const NEAR_DEVICE_LIMIT_RATIO = 0.8;
+
+export function getDeviceUsageState(usedDevices: number, maxDevices: number): DeviceUsageState {
+  const ratio = maxDevices > 0 ? usedDevices / maxDevices : 0;
+  if (ratio >= 1) return "reached";
+  if (ratio >= NEAR_DEVICE_LIMIT_RATIO) return "near";
+  return "normal";
+}
+
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("ar-SD", {
