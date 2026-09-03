@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, RefreshCw, ScanLine, ShieldAlert, X } from "lucide-react";
 import { createScanOnceGuard, extractCertificateIdFromScan } from "@/lib/certificates/verify-url";
+import { logQrScanUsedAction } from "@/app/verify/actions";
 import { cn } from "@/lib/utils";
 import type QrScannerType from "qr-scanner";
 
@@ -65,6 +66,10 @@ export function QrScannerPanel() {
           return;
         }
         if (!claimFirstRef.current()) return;
+        // Fire-and-forget: never awaited, never blocks navigation, and
+        // logQrScanUsedAction never throws on its own -- see its own
+        // comment. No certificate id or scanned text is passed to it.
+        void logQrScanUsedAction().catch(() => {});
         teardown();
         setState("idle");
         router.push(`/verify/${certificateId}`);

@@ -38,6 +38,8 @@ export type SecurityEventType =
   | "report_evidence_rate_limited"
   | "certificate_issued"
   | "certificate_issue_failed"
+  | "certificate_verified"
+  | "qr_scan_used"
   | "batch_imei_check"
   | "batch_imei_check_rate_limited"
   | "subscription_request_submitted"
