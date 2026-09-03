@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "sd.sanadak.app",
       "sha256_cert_fingerprints": [
-        "A7:59:A9:05:7B:38:D4:63:F1:6F:FF:E1:1C:3E:D4:32:2E:9D:9D:49:5E:EB:9B:E4:D5:23:42:E7:81:D4:5E:D2"
+        "A7:59:A9:05:7B:38:D4:63:F1:6F:FF:E1:1C:3E:D4:32:2E:9D:9D:49:5E:EB:9B:E4:D5:23:42:E7:81:D4:5E:D2",
+        "D9:8A:7F:C4:63:97:3D:07:E5:81:BF:9D:C2:4F:30:46:0D:12:CF:2E:EF:22:8D:85:9A:E4:E4:DC:2F:48:5B:C2"
       ]
     }
   }
