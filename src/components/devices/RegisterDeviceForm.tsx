@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Smartphone } from "lucide-react";
 import { registerDeviceAction } from "@/app/devices/actions";
 import { isValidImei, normalizeImei } from "@/lib/devices/imei-format";
+import { isNetworkFailure, OFFLINE_MESSAGE } from "@/lib/network";
 import { LimitReachedNotice } from "@/components/devices/LimitReachedNotice";
 
 // Fast, non-authoritative client-side format check using imei-format.ts
@@ -61,31 +62,43 @@ export function RegisterDeviceForm() {
       }
     }
 
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setError(OFFLINE_MESSAGE);
+      return;
+    }
+
     startTransition(async () => {
-      // owner_id and current_status are never sent from here -- there is no
-      // field for either in this form or in registerDeviceAction's input
-      // type. The server derives owner_id from the session and always
-      // starts the device at ACTIVE.
-      const result = await registerDeviceAction({
-        brand,
-        model,
-        color: color.trim() || null,
-        serialNumber: serialNumber.trim() || null,
-        imei1,
-        imei2: imei2.trim() || null,
-      });
+      try {
+        // owner_id and current_status are never sent from here -- there is
+        // no field for either in this form or in registerDeviceAction's
+        // input type. The server derives owner_id from the session and
+        // always starts the device at ACTIVE.
+        const result = await registerDeviceAction({
+          brand,
+          model,
+          color: color.trim() || null,
+          serialNumber: serialNumber.trim() || null,
+          imei1,
+          imei2: imei2.trim() || null,
+        });
 
-      if (!result.ok) {
-        if (result.limitReached && result.ctaLabel) {
-          setLimitNotice({ message: result.error, ctaLabel: result.ctaLabel });
-        } else {
-          setError(result.error);
+        if (!result.ok) {
+          if (result.limitReached && result.ctaLabel) {
+            setLimitNotice({ message: result.error, ctaLabel: result.ctaLabel });
+          } else {
+            setError(result.error);
+          }
+          return;
         }
-        return;
-      }
 
-      router.push(`/devices/${result.deviceId}`);
-      router.refresh();
+        router.push(`/devices/${result.deviceId}`);
+        router.refresh();
+      } catch (err) {
+        // The Server Action call itself failed to reach the server -- a
+        // dropped connection, not a rejection registerDeviceAction returned
+        // on purpose. Never let this look like the request went through.
+        setError(isNetworkFailure(err) ? OFFLINE_MESSAGE : "تعذر تسجيل الجهاز، حاول مرة أخرى.");
+      }
     });
   }
 

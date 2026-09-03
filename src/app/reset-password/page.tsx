@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { KeyRound, CheckCircle2, AlertCircle } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { createClient } from "@/lib/supabase/client";
 import { describeUpdatePasswordError } from "@/lib/authErrors";
 
@@ -133,30 +134,26 @@ export default function ResetPasswordPage() {
               <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-navy">
                 كلمة المرور الجديدة
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
                 minLength={6}
+                autoComplete="new-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
+                onChange={setPassword}
               />
             </div>
             <div>
               <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-semibold text-navy">
                 تأكيد كلمة المرور
               </label>
-              <input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 required
                 minLength={6}
+                autoComplete="new-password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
+                onChange={setConfirmPassword}
               />
             </div>
 

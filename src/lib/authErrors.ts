@@ -60,6 +60,21 @@ export function describeResetPasswordError(err: AuthError): string {
   return "تعذر إرسال رابط الاستعادة الآن، حاول مرة أخرى لاحقًا.";
 }
 
+// resend() never reveals whether the email exists/is already verified
+// either -- a genuine failure here is either a network issue or Supabase's
+// own rate limit on outgoing auth emails (both already generic-safe).
+export function describeResendError(err: AuthError): string {
+  console.error("Supabase resend error:", err.name, err.status, err.message);
+
+  if (isNetworkAuthError(err)) {
+    return "تعذر الاتصال بالخادم، تحقق من اتصال الإنترنت وحاول مرة أخرى.";
+  }
+  if (isRateLimitAuthError(err)) {
+    return "لقد طلبت إعادة الإرسال عدة مرات، يرجى الانتظار قليلًا قبل المحاولة مرة أخرى.";
+  }
+  return "تعذر إرسال رسالة التفعيل الآن، حاول مرة أخرى لاحقًا.";
+}
+
 export function describeUpdatePasswordError(err: AuthError): string {
   console.error("Supabase updateUser (password) error:", err.name, err.status, err.message);
 
