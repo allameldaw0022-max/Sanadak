@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, UploadCloud, CheckCircle2 } from "lucide-react";
 import { submitSubscriptionRequestAction } from "@/app/dealer/subscription/actions";
 import { cn } from "@/lib/utils";
+import { PlanCard } from "./PlanCard";
 import type { SubscriptionPlanItem, PaymentMethodItem } from "@/lib/supabase/queries";
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -19,9 +20,11 @@ function quickCheck(file: File): string | null {
 export function SubscriptionRequestForm({
   plans,
   paymentMethods,
+  currentPlanId,
 }: {
   plans: SubscriptionPlanItem[];
   paymentMethods: PaymentMethodItem[];
+  currentPlanId?: string | null;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,25 +69,17 @@ export function SubscriptionRequestForm({
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-sm font-bold text-navy">اختر الخطة</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <h3 className="text-lg font-extrabold text-navy">اختر الباقة المناسبة لنشاطك</h3>
+        <p className="mt-1 mb-4 text-sm text-slate-500">ابدأ بإدارة أجهزتك وتوثيقها بسهولة مع سندك.</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {plans.map((plan) => (
-            <button
+            <PlanCard
               key={plan.id}
-              type="button"
-              onClick={() => setPlanId(plan.id)}
-              className={cn(
-                "rounded-2xl border p-4 text-right transition-colors",
-                planId === plan.id ? "border-primary bg-primary-light/40" : "border-slate-200 bg-white hover:bg-slate-50"
-              )}
-            >
-              <p className="text-sm font-extrabold text-navy">{plan.name}</p>
-              <p className="mt-1 text-lg font-extrabold text-primary-dark" dir="ltr">
-                {plan.monthlyPriceSdg.toLocaleString("ar-SD")} <span className="text-xs font-semibold text-slate-500">جنيه/شهريًا</span>
-              </p>
-              <p className="mt-1 text-xs text-slate-500">حتى {plan.maxDevices} جهاز</p>
-              {plan.description && <p className="mt-2 text-xs text-slate-500">{plan.description}</p>}
-            </button>
+              plan={plan}
+              selected={planId === plan.id}
+              isCurrentPlan={currentPlanId === plan.id}
+              onSelect={() => setPlanId(plan.id)}
+            />
           ))}
         </div>
       </div>

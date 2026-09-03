@@ -50,36 +50,67 @@ export async function reviewSubscriptionRequestAction(
   return { ok: true };
 }
 
+const SLUG_FORMAT = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const MAX_FEATURES = 12;
+const MAX_FEATURE_LENGTH = 200;
+
 export async function upsertSubscriptionPlanAction(input: {
   id?: string;
   name: string;
+  slug: string;
   monthlyPriceSdg: number;
   maxDevices: number;
   description: string;
+  features: string[];
+  isPopular: boolean;
   sortOrder: number;
 }): Promise<ActionResult> {
   await requireAdmin();
   const supabase = await createClient();
 
+  const features = input.features
+    .map((f) => f.trim())
+    .filter((f) => f.length > 0)
+    .slice(0, MAX_FEATURES);
+
   const row = {
     name: input.name.trim(),
+    slug: input.slug.trim().toLowerCase(),
     monthly_price_sdg: input.monthlyPriceSdg,
     max_devices: input.maxDevices,
     description: input.description.trim() || null,
+    features,
+    is_popular: input.isPopular,
     sort_order: input.sortOrder,
   };
 
-  if (!row.name || row.monthly_price_sdg < 0 || row.max_devices <= 0) {
-    return { ok: false, error: "تحقق من صحة البيانات المدخلة." };
+  if (!row.name) return { ok: false, error: "اسم الخطة مطلوب." };
+  if (!row.slug || !SLUG_FORMAT.test(row.slug)) {
+    return { ok: false, error: "المعرف (slug) مطلوب، ويجب أن يتكون من أحرف إنجليزية صغيرة وأرقام وشرطات فقط." };
+  }
+  if (!Number.isFinite(row.monthly_price_sdg) || row.monthly_price_sdg < 0) {
+    return { ok: false, error: "السعر يجب أن يكون رقمًا صحيحًا وغير سالب." };
+  }
+  if (!Number.isInteger(row.max_devices) || row.max_devices < 1) {
+    return { ok: false, error: "الحد الأقصى للأجهزة يجب أن يكون 1 على الأقل." };
+  }
+  if (features.some((f) => f.length > MAX_FEATURE_LENGTH)) {
+    return { ok: false, error: "كل ميزة يجب ألا تتجاوز 200 حرف." };
   }
 
   const { error } = input.id
     ? await supabase.from("subscription_plans").update(row).eq("id", input.id)
     : await supabase.from("subscription_plans").insert(row);
 
-  if (error) return { ok: false, error: "تعذر حفظ الخطة، حاول مرة أخرى." };
+  if (error) {
+    // subscription_plans_slug_unique -> a friendly message instead of the
+    // raw unique-violation (23505) error.
+    if (error.code === "23505") return { ok: false, error: "هذا المعرف (slug) مستخدم بالفعل لخطة أخرى." };
+    return { ok: false, error: "تعذر حفظ الخطة، حاول مرة أخرى." };
+  }
 
   revalidatePath("/admin/subscriptions/plans");
+  revalidatePath("/dealer/subscription");
   return { ok: true };
 }
 

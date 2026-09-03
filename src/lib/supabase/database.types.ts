@@ -691,35 +691,47 @@ export type Database = {
       }
       subscription_plans: {
         Row: {
+          billing_interval: string
           created_at: string
           description: string | null
+          features: Json
           id: string
           is_active: boolean
+          is_popular: boolean
           max_devices: number
           monthly_price_sdg: number
           name: string
+          slug: string
           sort_order: number
           updated_at: string
         }
         Insert: {
+          billing_interval?: string
           created_at?: string
           description?: string | null
+          features?: Json
           id?: string
           is_active?: boolean
+          is_popular?: boolean
           max_devices: number
           monthly_price_sdg: number
           name: string
+          slug: string
           sort_order?: number
           updated_at?: string
         }
         Update: {
+          billing_interval?: string
           created_at?: string
           description?: string | null
+          features?: Json
           id?: string
           is_active?: boolean
+          is_popular?: boolean
           max_devices?: number
           monthly_price_sdg?: number
           name?: string
+          slug?: string
           sort_order?: number
           updated_at?: string
         }

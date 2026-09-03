@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, CreditCard, Bell, ShieldCheck, Users } from "lucide-react";
+import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, CreditCard, Tag, Bell, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminNotificationBell } from "./AdminNotificationBell";
 import type { AdminInboxNotification } from "@/lib/supabase/queries";
@@ -15,6 +15,7 @@ const links = [
   { href: "/admin/certificates", label: "الشهادات", icon: BadgeCheck },
   { href: "/admin/dealers", label: "التجار", icon: Store },
   { href: "/admin/subscriptions", label: "الاشتراكات", icon: CreditCard },
+  { href: "/admin/subscriptions/plans", label: "خطط الاشتراك", icon: Tag },
   { href: "/admin/notifications", label: "الإشعارات", icon: Bell },
   { href: "/admin/audit", label: "سجل الأمان", icon: ShieldCheck },
   { href: "/admin/users", label: "المستخدمون", icon: Users },

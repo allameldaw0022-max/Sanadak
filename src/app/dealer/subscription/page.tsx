@@ -72,9 +72,12 @@ export default async function DealerSubscriptionPage() {
         ) : (
           <div className="flex items-center gap-3">
             <CreditCard className="h-8 w-8 text-slate-300" />
-            <p className="text-sm text-slate-500">
-              كل مستخدم يحصل تلقائيًا على 3 أجهزة مجانية بلا اشتراك. للحصول على حد أعلى، اشترك في إحدى خطط التاجر أدناه.
-            </p>
+            <div>
+              <p className="text-sm font-bold text-navy">لا توجد باقة نشطة حاليًا</p>
+              <p className="mt-0.5 text-sm text-slate-500">
+                كل مستخدم يحصل تلقائيًا على 3 أجهزة مجانية بلا اشتراك. للحصول على حد أعلى، اشترك في إحدى خطط التاجر أدناه.
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -84,7 +87,7 @@ export default async function DealerSubscriptionPage() {
         {hasPendingRequest ? (
           <p className="text-sm text-amber-700">لديك طلب اشتراك قيد المراجعة حاليًا. سيصلك إشعار فور البت فيه.</p>
         ) : (
-          <SubscriptionRequestForm plans={plans} paymentMethods={paymentMethods} />
+          <SubscriptionRequestForm plans={plans} paymentMethods={paymentMethods} currentPlanId={status?.planId} />
         )}
       </div>
 

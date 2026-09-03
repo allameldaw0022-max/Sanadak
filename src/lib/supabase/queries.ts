@@ -990,26 +990,44 @@ export async function getAdminNotifications(): Promise<AdminNotificationItem[]> 
 
 export type SubscriptionPlanItem = {
   id: string;
+  slug: string;
   name: string;
   monthlyPriceSdg: number;
   maxDevices: number;
   description: string | null;
+  features: string[];
+  isPopular: boolean;
+  billingInterval: string;
 };
+
+// features is stored as jsonb (a plain array of strings); this narrows
+// whatever comes back from Postgres to string[] defensively rather than
+// trusting the column's declared shape, since the only real guarantee is
+// the DB CHECK (jsonb_typeof(features) = 'array') -- element type isn't
+// enforced there.
+function parsePlanFeatures(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
+}
 
 export async function getActiveSubscriptionPlans(): Promise<SubscriptionPlanItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("subscription_plans")
-    .select("id, name, monthly_price_sdg, max_devices, description")
+    .select("id, slug, name, monthly_price_sdg, max_devices, description, features, is_popular, billing_interval")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
   return (data ?? []).map((p) => ({
     id: p.id,
+    slug: p.slug,
     name: p.name,
     monthlyPriceSdg: p.monthly_price_sdg,
     maxDevices: p.max_devices,
     description: p.description,
+    features: parsePlanFeatures(p.features),
+    isPopular: p.is_popular,
+    billingInterval: p.billing_interval,
   }));
 }
 
@@ -1043,6 +1061,7 @@ export async function getActivePaymentMethods(): Promise<PaymentMethodItem[]> {
 }
 
 export type DealerSubscriptionStatus = {
+  planId: string;
   planName: string;
   maxDevices: number;
   usedDevices: number;
@@ -1067,6 +1086,7 @@ export async function getMyDealerSubscriptionStatus(dealerId: string): Promise<D
   ]);
 
   return {
+    planId: sub.plan_id,
     planName: plan?.name ?? "—",
     maxDevices: sub.max_devices_snapshot,
     usedDevices: count ?? 0,
@@ -1165,15 +1185,21 @@ export async function getAdminSubscriptionPlans(): Promise<AdminSubscriptionPlan
   const supabase = await createClient();
   const { data } = await supabase
     .from("subscription_plans")
-    .select("id, name, monthly_price_sdg, max_devices, description, is_active, sort_order")
+    .select(
+      "id, slug, name, monthly_price_sdg, max_devices, description, features, is_popular, billing_interval, is_active, sort_order"
+    )
     .order("sort_order", { ascending: true });
 
   return (data ?? []).map((p) => ({
     id: p.id,
+    slug: p.slug,
     name: p.name,
     monthlyPriceSdg: p.monthly_price_sdg,
     maxDevices: p.max_devices,
     description: p.description,
+    features: parsePlanFeatures(p.features),
+    isPopular: p.is_popular,
+    billingInterval: p.billing_interval,
     isActive: p.is_active,
     sortOrder: p.sort_order,
   }));
