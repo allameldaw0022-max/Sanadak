@@ -23,7 +23,13 @@ export async function GET(request: NextRequest) {
   const oauthError = searchParams.get("error_description") ?? searchParams.get("error");
   const next = "/";
 
+  // Safe to log: Google/Supabase's own generic error reason (e.g. the user
+  // denied consent, or the provider rejected the request) -- never the
+  // authorization `code` itself (a one-time PKCE secret) and never
+  // anything from exchangeCodeForSession's internals below, which could
+  // include token material.
   if (oauthError) {
+    console.error("Google OAuth callback error:", oauthError);
     return NextResponse.redirect(`${origin}/login?oauth_error=1`);
   }
 
@@ -33,6 +39,8 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    console.error("Google OAuth code exchange failed:", error.name, error.status, error.message);
+    return NextResponse.redirect(`${origin}/login?oauth_error=1`);
   }
 
   return NextResponse.redirect(`${origin}/login?oauth_error=1`);
