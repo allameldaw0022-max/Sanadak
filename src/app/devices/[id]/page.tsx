@@ -19,6 +19,7 @@ const reportTypeLabel: Record<string, string> = { LOST: "مفقود", STOLEN: "�
 
 export const metadata: Metadata = {
   title: "تفاصيل الجهاز | سندك",
+  robots: { index: false },
 };
 
 function InfoRow({ icon: Icon, label, value }: { icon: typeof Smartphone; label: string; value: string }) {

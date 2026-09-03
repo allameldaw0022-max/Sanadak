@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "مطالباتي | سندك",
+  robots: { index: false },
 };
 
 export default async function MyClaimsPage() {

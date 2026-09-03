@@ -9,6 +9,7 @@ import { formatDate, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "شهاداتي | سندك",
+  robots: { index: false },
 };
 
 export default async function MyCertificatesPage() {

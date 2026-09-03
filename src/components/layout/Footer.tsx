@@ -7,6 +7,7 @@ const quickLinks = [
   { href: "/devices/check", label: "فحص IMEI" },
   { href: "/devices", label: "أجهزتي" },
   { href: "/verify", label: "التحقق من شهادة" },
+  { href: "/faq", label: "الأسئلة الشائعة" },
 ];
 
 export function Footer() {

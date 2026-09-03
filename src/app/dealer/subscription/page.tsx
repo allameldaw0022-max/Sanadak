@@ -20,6 +20,7 @@ import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "اشتراكي | سندك",
+  robots: { index: false },
 };
 
 // Open to any signed-in user, not just existing dealers -- becoming a

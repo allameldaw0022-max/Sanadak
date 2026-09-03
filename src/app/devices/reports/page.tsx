@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "بلاغاتي | سندك",
+  robots: { index: false },
 };
 
 const reportTypeLabel: Record<string, string> = { LOST: "مفقود", STOLEN: "مسروق" };

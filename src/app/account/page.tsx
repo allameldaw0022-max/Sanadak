@@ -19,6 +19,7 @@ import { signOutAction } from "@/app/auth/actions";
 
 export const metadata: Metadata = {
   title: "حسابي | سندك",
+  robots: { index: false },
 };
 
 const roleLabels: Record<string, string> = {

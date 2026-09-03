@@ -11,6 +11,7 @@ import { formatDate, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "شهادة الجهاز | سندك",
+  robots: { index: false },
 };
 
 export default async function CertificateDetailPage({ params }: { params: Promise<{ id: string }> }) {

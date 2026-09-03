@@ -9,6 +9,7 @@ import { formatDateTime, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "الإشعارات | سندك",
+  robots: { index: false },
 };
 
 export default async function NotificationsPage() {

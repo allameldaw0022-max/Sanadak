@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "تفاصيل البلاغ | سندك",
+  robots: { index: false },
 };
 
 const CLOSED_STATUSES = new Set(["APPROVED", "REJECTED"]);

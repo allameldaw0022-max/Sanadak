@@ -14,18 +14,28 @@ const cairo = Cairo({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const defaultDescription = "افحص رقم IMEI، سجّل جهازك، ووثّق ملكيته قبل البيع أو الشراء بأمان.";
+const defaultTitle = `${SITE_NAME} | فحص وتوثيق الأجهزة`;
+const defaultDescription = "منصة سودانية للتحقق من الأجهزة وتوثيق ملكيتها";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: `${SITE_NAME} | فحص وتوثيق الأجهزة`,
+  title: defaultTitle,
   description: defaultDescription,
   manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     siteName: SITE_NAME,
     type: "website",
     locale: "ar_SD",
-    title: `${SITE_NAME} | فحص وتوثيق الأجهزة`,
+    url: SITE_URL,
+    title: defaultTitle,
+    description: defaultDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
     description: defaultDescription,
   },
 };

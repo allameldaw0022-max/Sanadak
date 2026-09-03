@@ -7,6 +7,7 @@ import { formatDate, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "التحقق من الشهادة | سندك",
+  robots: { index: false },
 };
 
 // Public, no-auth page. verify_certificate is the ONLY thing this page

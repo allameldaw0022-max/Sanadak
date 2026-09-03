@@ -7,6 +7,7 @@ import { loginUrlWithReturn } from "@/lib/auth/return-path";
 
 export const metadata: Metadata = {
   title: "تقديم مطالبة ملكية | سندك",
+  robots: { index: false },
 };
 
 export default async function NewOwnershipClaimPage() {
