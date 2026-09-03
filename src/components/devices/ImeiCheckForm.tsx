@@ -17,8 +17,19 @@ const STATUS_STYLES: Record<string, { icon: typeof CheckCircle2; className: stri
   RECOVERED: { icon: CheckCircle2, className: "border-sky-200 bg-sky-50 text-sky-700" },
 };
 
+// "حالة الجهاز" value shown in the detail list below the summary banner --
+// distinct from the banner's own sentence (STATUS_STYLES' companion
+// message in check-response.ts), which stays as-is.
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "سليم",
+  UNDER_REVIEW: "قيد المراجعة",
+  LOST: "مفقود (تم الإبلاغ عنه)",
+  STOLEN: "مسروق (تم الإبلاغ عنه)",
+  RECOVERED: "مستعاد",
+};
+
 type ResultState =
-  | { kind: "disclosed"; status: string; message: string }
+  | { kind: "disclosed"; status: string; message: string; ownerDisplayName: string | null }
   | { kind: "hidden"; message: string }
   | { kind: "error"; message: string }
   | { kind: "offline" };
@@ -45,7 +56,12 @@ export function ImeiCheckForm() {
           return;
         }
         if (res.result.disclosed) {
-          setResult({ kind: "disclosed", status: res.result.status, message: res.result.message });
+          setResult({
+            kind: "disclosed",
+            status: res.result.status,
+            message: res.result.message,
+            ownerDisplayName: res.result.ownerDisplayName,
+          });
         } else {
           setResult({ kind: "hidden", message: res.result.message });
         }
@@ -152,9 +168,27 @@ export function ImeiCheckForm() {
           const style = STATUS_STYLES[result.status] ?? STATUS_STYLES.UNDER_REVIEW;
           const Icon = style.icon;
           return (
-            <div className={cn("mt-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold", style.className)}>
-              <Icon className="h-5 w-5 shrink-0" />
-              {result.message}
+            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+              <div className={cn("flex items-center gap-2 border-b px-4 py-3 text-sm font-bold", style.className)}>
+                <Icon className="h-5 w-5 shrink-0" />
+                {result.message}
+              </div>
+              <dl className="divide-y divide-slate-100 bg-white px-4 text-sm">
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-slate-500">حالة الجهاز</dt>
+                  <dd className="font-semibold text-navy">{STATUS_LABELS[result.status] ?? result.status}</dd>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-slate-500">حالة التسجيل</dt>
+                  <dd className="font-semibold text-navy">مسجل</dd>
+                </div>
+                {result.ownerDisplayName && (
+                  <div className="flex items-center justify-between py-2.5">
+                    <dt className="text-slate-500">المالك المسجل</dt>
+                    <dd className="font-semibold text-navy">{result.ownerDisplayName}</dd>
+                  </div>
+                )}
+              </dl>
             </div>
           );
         })()}

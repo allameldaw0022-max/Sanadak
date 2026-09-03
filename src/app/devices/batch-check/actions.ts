@@ -85,7 +85,12 @@ export async function batchCheckImeiAction(rawImeis: string[]): Promise<BatchChe
     hashes.push(imeiHash);
     const { data } = await supabase.rpc("public_check_device_status", { p_imei_hash: imeiHash });
     const status = data?.[0]?.status ?? null;
-    items.push({ imeiInput: raw, result: buildImeiCheckDisclosure(status) });
+    // Batch check is a materially larger enumeration/scraping surface than
+    // the single check (see the function comment above) -- deliberately
+    // never surfaces owner_display_name here, regardless of what the RPC
+    // returns for a single row, to avoid bulk-exposing masked owner names
+    // across many devices in one authenticated call.
+    items.push({ imeiInput: raw, result: buildImeiCheckDisclosure(status, null) });
   }
 
   // Only hashes are logged, one aggregate event per batch -- never the raw

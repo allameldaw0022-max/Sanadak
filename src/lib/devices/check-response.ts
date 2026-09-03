@@ -12,25 +12,41 @@ const DISCLOSED_STATUS_MESSAGES: Record<Exclude<DeviceStatus, "BLOCKED">, string
   RECOVERED: "الجهاز مسجل كجهاز مستعاد.",
 };
 
+// The exact set of statuses public_check_device_status() itself will ever
+// attach a masked owner name to (see the migration adding
+// owner_display_name) -- repeated here as a second, independent gate so a
+// bug in either layer alone still can't surface a name for LOST/STOLEN/
+// BLOCKED: this function only ever reads owner_display_name at all when
+// status is in this set.
+const OWNER_NAME_ELIGIBLE_STATUSES = new Set<DeviceStatus>(["ACTIVE", "UNDER_REVIEW", "RECOVERED"]);
+
 const NOT_DISCLOSED_MESSAGE = "تعذر إظهار نتيجة التحقق.";
 
 export type ImeiCheckDisclosure =
-  | { disclosed: true; status: Exclude<DeviceStatus, "BLOCKED">; message: string }
+  | { disclosed: true; status: Exclude<DeviceStatus, "BLOCKED">; message: string; ownerDisplayName: string | null }
   | { disclosed: false; message: string };
 
 // Maps a raw DB lookup result to the public-facing response shape. This is
 // the single place that decides what a stranger is allowed to learn from an
-// IMEI check, so it is deliberately narrow: it only ever receives a status
-// enum (or null for "no row found") -- it can't leak owner data because it
-// never had access to any in the first place (public_check_device_status
-// only ever selects `current_status`, nothing else).
+// IMEI check. ownerDisplayName is already masked by the database (never the
+// full name) and already NULL for any status this function wouldn't
+// disclose anyway -- the OWNER_NAME_ELIGIBLE_STATUSES check below is
+// defense-in-depth, not the only thing standing between a caller and a name.
 //
 // "not found" and "BLOCKED" resolve to the exact same {disclosed:false,
 // message} shape on purpose: an attacker must not be able to tell an
 // unregistered IMEI apart from one that exists but is deliberately hidden.
-export function buildImeiCheckDisclosure(status: DeviceStatus | null): ImeiCheckDisclosure {
+export function buildImeiCheckDisclosure(
+  status: DeviceStatus | null,
+  ownerDisplayName: string | null
+): ImeiCheckDisclosure {
   if (status === null || status === "BLOCKED") {
     return { disclosed: false, message: NOT_DISCLOSED_MESSAGE };
   }
-  return { disclosed: true, status, message: DISCLOSED_STATUS_MESSAGES[status] };
+  return {
+    disclosed: true,
+    status,
+    message: DISCLOSED_STATUS_MESSAGES[status],
+    ownerDisplayName: OWNER_NAME_ELIGIBLE_STATUSES.has(status) ? ownerDisplayName : null,
+  };
 }

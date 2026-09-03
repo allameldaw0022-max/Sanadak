@@ -221,5 +221,6 @@ export async function checkImeiAction(rawImei: string): Promise<CheckImeiResult>
   }
 
   const status = data?.[0]?.status ?? null;
-  return { ok: true, result: buildImeiCheckDisclosure(status) };
+  const ownerDisplayName = data?.[0]?.owner_display_name ?? null;
+  return { ok: true, result: buildImeiCheckDisclosure(status, ownerDisplayName) };
 }
