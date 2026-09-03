@@ -32,7 +32,14 @@ function GoogleLogo() {
 // PKCE code that route exchanges for a session. No custom OAuth handling,
 // no separate credential storage: everything Google-related lives inside
 // Supabase Auth exactly like the email/password flow already does.
-export function GoogleSignInButton() {
+//
+// `next` (already validated against return-path.ts's allowlist by the
+// caller) rides along as a plain query param on the callback URL so
+// /auth/callback knows where to send the browser after the round trip to
+// Google and back -- it re-validates the same value against the same
+// allowlist itself before using it, so this component doesn't need to be
+// trusted for that.
+export function GoogleSignInButton({ next = "/" }: { next?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +49,7 @@ export function GoogleSignInButton() {
     const supabase = createClient();
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     if (oauthError) {
       setLoading(false);

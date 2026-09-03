@@ -11,6 +11,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { createClient } from "@/lib/supabase/client";
 import { describeSignInError, describeSignUpError, describeResendError } from "@/lib/authErrors";
+import { sanitizeReturnPath } from "@/lib/auth/return-path";
 import { cn } from "@/lib/utils";
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -27,6 +28,12 @@ function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oauthFailed = searchParams.get("oauth_error") === "1";
+  // Only ever one of the fixed, known in-app paths in return-path.ts's
+  // allowlist, or "/" -- see sanitizeReturnPath. Lets a visitor who was
+  // bounced here from a protected page (e.g. the IMEI check's "هل هذا
+  // جهازك؟" CTA) land back on it after signing in, instead of always on
+  // "/".
+  const next = sanitizeReturnPath(searchParams.get("next"));
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -67,7 +74,7 @@ function LoginPageInner() {
         setError(describeSignInError(signInError));
         return;
       }
-      router.push("/");
+      router.push(next);
       router.refresh();
     } else {
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -84,7 +91,7 @@ function LoginPageInner() {
         return;
       }
       if (data.session) {
-        router.push("/");
+        router.push(next);
         router.refresh();
         return;
       }
@@ -225,7 +232,7 @@ function LoginPageInner() {
               </p>
             )}
 
-            <GoogleSignInButton />
+            <GoogleSignInButton next={next} />
 
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-slate-200" />

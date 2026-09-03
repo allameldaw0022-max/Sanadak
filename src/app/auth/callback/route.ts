@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeReturnPath } from "@/lib/auth/return-path";
 
 // Only OAuth (Google) lands here -- the existing signup-confirmation and
 // password-recovery links still resolve client-side via detectSessionInUrl
@@ -21,7 +22,13 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const oauthError = searchParams.get("error_description") ?? searchParams.get("error");
-  const next = "/";
+  // Re-validated against return-path.ts's allowlist regardless of what this
+  // request's own "next" query param says -- GoogleSignInButton only ever
+  // sends an already-sanitized value, but this route treats it as
+  // untrusted input anyway (it arrives via a full redirect round trip
+  // through Google, not a value this server ever controlled).
+  const next = sanitizeReturnPath(searchParams.get("next"));
+  const loginRedirect = next === "/" ? `${origin}/login?oauth_error=1` : `${origin}/login?oauth_error=1&next=${encodeURIComponent(next)}`;
 
   // Safe to log: Google/Supabase's own generic error reason (e.g. the user
   // denied consent, or the provider rejected the request) -- never the
@@ -30,7 +37,7 @@ export async function GET(request: NextRequest) {
   // include token material.
   if (oauthError) {
     console.error("Google OAuth callback error:", oauthError);
-    return NextResponse.redirect(`${origin}/login?oauth_error=1`);
+    return NextResponse.redirect(loginRedirect);
   }
 
   if (code) {
@@ -40,8 +47,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`);
     }
     console.error("Google OAuth code exchange failed:", error.name, error.status, error.message);
-    return NextResponse.redirect(`${origin}/login?oauth_error=1`);
+    return NextResponse.redirect(loginRedirect);
   }
 
-  return NextResponse.redirect(`${origin}/login?oauth_error=1`);
+  return NextResponse.redirect(loginRedirect);
 }
