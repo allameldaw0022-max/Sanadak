@@ -3,6 +3,9 @@ import { LegalPage } from "@/components/ui/LegalPage";
 
 export const metadata: Metadata = {
   title: "سياسة الخصوصية | سندك",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export default function PrivacyPage() {

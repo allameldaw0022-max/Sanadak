@@ -4,6 +4,9 @@ import { LegalPage } from "@/components/ui/LegalPage";
 
 export const metadata: Metadata = {
   title: "شروط الاستخدام | سندك",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {

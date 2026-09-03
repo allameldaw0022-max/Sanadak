@@ -6,6 +6,9 @@ import { Container } from "@/components/ui/Container";
 export const metadata: Metadata = {
   title: "الأسئلة الشائعة | سندك",
   description: "إجابات مختصرة على أكثر الأسئلة شيوعًا حول فحص أجهزة الجوال وتوثيق ملكيتها عبر سندك.",
+  alternates: {
+    canonical: "/faq",
+  },
 };
 
 const faqs: { question: string; answer: string }[] = [

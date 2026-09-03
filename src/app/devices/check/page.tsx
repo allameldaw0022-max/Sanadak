@@ -6,6 +6,9 @@ import { ImeiCheckForm } from "@/components/devices/ImeiCheckForm";
 export const metadata: Metadata = {
   title: "تحقق من IMEI | سندك",
   description: "افحص حالة أي جهاز عبر رقم IMEI قبل الشراء.",
+  alternates: {
+    canonical: "/devices/check",
+  },
 };
 
 export default function CheckImeiPage() {

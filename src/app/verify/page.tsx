@@ -7,6 +7,9 @@ import { QrScannerPanel } from "@/components/devices/QrScannerPanel";
 export const metadata: Metadata = {
   title: "التحقق من شهادة | سندك",
   description: "تحقق من صحة شهادة ملكية جهاز عبر سندك.",
+  alternates: {
+    canonical: "/verify",
+  },
 };
 
 export default function VerifyCertificateIndexPage() {
