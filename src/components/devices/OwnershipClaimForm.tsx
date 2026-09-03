@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, FileSearch } from "lucide-react";
 import { submitOwnershipClaimAction } from "@/app/devices/claims/actions";
 import { isValidImei, normalizeImei } from "@/lib/devices/imei-format";
+import { consumeImeiHandoff } from "@/lib/devices/imei-handoff";
 
 // Client-side pre-check uses imei-format.ts only (no secret). The IMEI is
 // resolved to a device server-side by submit_ownership_claim -- this form
@@ -15,6 +16,22 @@ export function OwnershipClaimForm() {
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // One-time prefill from an IMEI check's "هل هذا جهازك؟" CTA, if any -- see
+  // imei-handoff.ts. Never a query param (the IMEI must not appear in the
+  // URL), and consumeImeiHandoff() clears it immediately so it's never
+  // reapplied on a later visit. Still just a starting value for a plain,
+  // editable text input -- submitOwnershipClaimAction re-validates and
+  // re-hashes everything server-side regardless of where it came from.
+  useEffect(() => {
+    const handoff = consumeImeiHandoff();
+    if (!handoff) return;
+    // Deferred a tick rather than calling setState synchronously in the
+    // effect body -- same pattern as the login page's resend-cooldown
+    // timer, avoids react-hooks/set-state-in-effect.
+    const id = setTimeout(() => setImei(handoff), 0);
+    return () => clearTimeout(id);
+  }, []);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();

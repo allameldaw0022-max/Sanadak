@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Smartphone } from "lucide-react";
 import { registerDeviceAction } from "@/app/devices/actions";
 import { isValidImei, normalizeImei } from "@/lib/devices/imei-format";
+import { consumeImeiHandoff } from "@/lib/devices/imei-handoff";
 import { isNetworkFailure, OFFLINE_MESSAGE } from "@/lib/network";
 import { LimitReachedNotice } from "@/components/devices/LimitReachedNotice";
 
@@ -28,6 +29,22 @@ export function RegisterDeviceForm() {
   const [serialNumber, setSerialNumber] = useState("");
   const [imei1, setImei1] = useState("");
   const [imei2, setImei2] = useState("");
+
+  // One-time prefill from an IMEI check's "سجّل هذا الجهاز الآن" CTA, if
+  // any -- see imei-handoff.ts. Never a query param (the IMEI must not
+  // appear in the URL), and consumeImeiHandoff() clears it immediately so
+  // it's never reapplied on a later visit. Still just a starting value for
+  // a plain, editable text input -- registerDeviceAction re-validates and
+  // re-hashes everything server-side regardless of where it came from.
+  useEffect(() => {
+    const handoff = consumeImeiHandoff();
+    if (!handoff) return;
+    // Deferred a tick rather than calling setState synchronously in the
+    // effect body -- same pattern as the login page's resend-cooldown
+    // timer, avoids react-hooks/set-state-in-effect.
+    const id = setTimeout(() => setImei1(handoff), 0);
+    return () => clearTimeout(id);
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [limitNotice, setLimitNotice] = useState<{ message: string; ctaLabel: string } | null>(null);
   const [pending, startTransition] = useTransition();

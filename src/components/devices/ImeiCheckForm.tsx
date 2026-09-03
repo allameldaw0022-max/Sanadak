@@ -1,9 +1,21 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { AlertCircle, CheckCircle2, HelpCircle, RefreshCw, ShieldAlert, ShieldQuestion, WifiOff } from "lucide-react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
+import Link from "next/link";
+import {
+  AlertCircle,
+  CheckCircle2,
+  HelpCircle,
+  RefreshCw,
+  RotateCcw,
+  ShieldAlert,
+  ShieldQuestion,
+  UserCheck,
+  WifiOff,
+} from "lucide-react";
 import { checkImeiAction } from "@/app/devices/actions";
 import { isValidImei, normalizeImei } from "@/lib/devices/imei-format";
+import { stashImeiForHandoff } from "@/lib/devices/imei-handoff";
 import { isNetworkFailure, OFFLINE_MESSAGE } from "@/lib/network";
 import { cn } from "@/lib/utils";
 
@@ -29,21 +41,30 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 type ResultState =
-  | { kind: "disclosed"; status: string; message: string; ownerDisplayName: string | null }
-  | { kind: "hidden"; message: string }
+  | { kind: "disclosed"; status: string; message: string; ownerDisplayName: string | null; imei: string }
+  | { kind: "hidden"; message: string; imei: string }
   | { kind: "error"; message: string }
   | { kind: "offline" };
+
+// The subset of disclosed statuses where "هل هذا جهازك؟" makes sense as a
+// next step -- kept in sync with OWNER_NAME_ELIGIBLE_STATUSES in
+// check-response.ts (LOST/STOLEN never reach this branch either way, since
+// suggesting a buyer file an ownership claim on a reported device would be
+// actively misleading).
+const OWNERSHIP_CLAIM_ELIGIBLE_STATUSES = new Set(["ACTIVE", "UNDER_REVIEW", "RECOVERED"]);
 
 // IMEI is passed to checkImeiAction as a plain Server Action argument, not
 // a query string or GET param -- it never touches the URL, browser history,
 // or a referrer header.
 export function ImeiCheckForm() {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [imei, setImei] = useState("");
   const [formatError, setFormatError] = useState<string | null>(null);
   const [result, setResult] = useState<ResultState | null>(null);
   const [pending, startTransition] = useTransition();
 
   function runCheck(value: string) {
+    const normalized = normalizeImei(value);
     startTransition(async () => {
       // Never let a stale result linger while a fresh check is in flight --
       // and a failure below (offline/error) replaces it too, so the UI can
@@ -61,9 +82,10 @@ export function ImeiCheckForm() {
             status: res.result.status,
             message: res.result.message,
             ownerDisplayName: res.result.ownerDisplayName,
+            imei: normalized,
           });
         } else {
-          setResult({ kind: "hidden", message: res.result.message });
+          setResult({ kind: "hidden", message: res.result.message, imei: normalized });
         }
       } catch (err) {
         // The Server Action call itself failed to reach the server (dropped
@@ -76,6 +98,10 @@ export function ImeiCheckForm() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    // Belt-and-suspenders against a duplicate in-flight check: the submit
+    // button is already disabled while pending, but this also covers the
+    // implicit-submit-on-Enter path.
+    if (pending) return;
     setResult(null);
 
     // Instant, non-authoritative client-side format check for a snappier
@@ -84,7 +110,7 @@ export function ImeiCheckForm() {
     // browser).
     const normalized = normalizeImei(imei);
     if (!isValidImei(normalized)) {
-      setFormatError("رقم IMEI غير صالح. تأكد من إدخال 15 رقمًا صحيحًا.");
+      setFormatError("رقم IMEI غير صالح. تأكد من إدخال 15 رقمًا صحيحًا، ويمكنك الحصول عليه بالاتصال بـ *#06#.");
       return;
     }
     setFormatError(null);
@@ -97,10 +123,18 @@ export function ImeiCheckForm() {
     runCheck(imei);
   }
 
+  function checkAnother() {
+    setImei("");
+    setFormatError(null);
+    setResult(null);
+    inputRef.current?.focus();
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
         <input
+          ref={inputRef}
           type="text"
           inputMode="numeric"
           dir="ltr"
@@ -108,13 +142,14 @@ export function ImeiCheckForm() {
           aria-invalid={!!formatError}
           aria-describedby={formatError ? "imei-check-error" : undefined}
           value={imei}
+          disabled={pending}
           onChange={(e) => {
             setImei(e.target.value);
             setFormatError(null);
           }}
           placeholder="أدخل رقم IMEI المكوّن من 15 رقمًا"
           maxLength={20}
-          className="h-12 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 text-center text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 sm:text-left"
+          className="h-12 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 text-center text-sm outline-none transition-colors focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 disabled:opacity-60 sm:text-left"
         />
         <button
           type="submit"
@@ -157,9 +192,33 @@ export function ImeiCheckForm() {
       )}
 
       {result?.kind === "hidden" && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-          <HelpCircle className="h-5 w-5 shrink-0" />
-          {result.message}
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+          <div className="flex items-center gap-2 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+            <HelpCircle className="h-5 w-5 shrink-0" />
+            {result.message}
+          </div>
+          {/* This CTA is shown identically whether the IMEI is genuinely
+              unregistered or belongs to a device we deliberately don't
+              disclose (BLOCKED) -- the two cases are indistinguishable by
+              design (see check-response.ts), so the action offered here
+              must never change based on which one it actually is. */}
+          <div className="flex flex-col gap-2 border-t border-slate-100 bg-white p-4 sm:flex-row">
+            <Link
+              href="/devices/new"
+              onClick={() => stashImeiForHandoff(result.imei)}
+              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+            >
+              سجّل هذا الجهاز الآن
+            </Link>
+            <button
+              type="button"
+              onClick={checkAnother}
+              className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              فحص جهاز آخر
+            </button>
+          </div>
         </div>
       )}
 
@@ -189,6 +248,29 @@ export function ImeiCheckForm() {
                   </div>
                 )}
               </dl>
+              <div className="flex flex-col gap-2 border-t border-slate-100 p-4 sm:flex-row">
+                {OWNERSHIP_CLAIM_ELIGIBLE_STATUSES.has(result.status) && (
+                  <Link
+                    href="/devices/claims/new"
+                    onClick={() => stashImeiForHandoff(result.imei)}
+                    className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    هل هذا جهازك؟
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={checkAnother}
+                  className={cn(
+                    "flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50",
+                    !OWNERSHIP_CLAIM_ELIGIBLE_STATUSES.has(result.status) && "flex-1"
+                  )}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  فحص جهاز آخر
+                </button>
+              </div>
             </div>
           );
         })()}
