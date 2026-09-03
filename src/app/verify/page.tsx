@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BadgeCheck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { VerifyCertificateForm } from "@/components/devices/VerifyCertificateForm";
+import { QrScannerPanel } from "@/components/devices/QrScannerPanel";
 
 export const metadata: Metadata = {
   title: "التحقق من شهادة | سندك",
@@ -21,7 +22,15 @@ export default function VerifyCertificateIndexPage() {
         </p>
       </div>
 
-      <div className="mx-auto mt-8 max-w-xl">
+      <div className="mx-auto mt-8 max-w-xl space-y-4">
+        <QrScannerPanel />
+
+        <div className="flex items-center gap-3 text-xs font-semibold text-slate-400">
+          <div className="h-px flex-1 bg-slate-200" />
+          أو أدخل المعرّف يدويًا
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
+
         <VerifyCertificateForm />
       </div>
     </Container>

@@ -54,9 +54,15 @@ export default async function CertificateDetailPage({ params }: { params: Promis
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qrDataUrl} alt="رمز QR للتحقق" className="mx-auto mt-5 h-48 w-48 rounded-xl border border-slate-100" />
 
-        <p className="mt-3 break-all text-[11px] text-slate-400" dir="ltr">
+        <a
+          href={verifyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 block break-all text-[11px] text-primary underline underline-offset-2 hover:text-primary-dark"
+          dir="ltr"
+        >
           {verifyUrl}
-        </p>
+        </a>
         <CopyVerifyLinkButton url={verifyUrl} />
         <p className="mt-2 text-xs text-slate-500">
           يمكن لأي شخص مسح رمز QR أو زيارة الرابط للتحقق من صحة هذه الشهادة دون الحاجة لتسجيل الدخول.

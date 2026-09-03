@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CheckCircle2, XCircle, ShieldQuestion } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container } from "@/components/ui/Container";
@@ -49,6 +50,13 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
             <p className="mt-2 text-xs text-slate-400">صدرت في {formatDate(record.issued_at)}</p>
           </>
         )}
+
+        <Link
+          href="/verify"
+          className="mt-5 flex h-11 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+        >
+          تحقق من شهادة أخرى
+        </Link>
       </div>
     </Container>
   );

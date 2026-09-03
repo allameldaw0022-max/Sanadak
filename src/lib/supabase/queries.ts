@@ -734,6 +734,22 @@ export async function getMyCertificateById(ownerId: string, certificateId: strin
   };
 }
 
+// Existence-only lookup (id, not the full detail shape) -- used by the
+// device detail page to decide whether to show "عرض الشهادة" instead of the
+// issuance CTA, without re-running issueCertificateAction's idempotent
+// select-or-insert just to find out. Same RLS
+// (device_certificates_select_own_or_admin) as getMyCertificateById.
+export async function getMyCertificateIdForDevice(ownerId: string, deviceId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("device_certificates")
+    .select("id")
+    .eq("device_id", deviceId)
+    .eq("issued_to", ownerId)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 // --- Admin dashboard (Sanadak): device-wide stats, device management,
 // certificates, and security-event audit. Every read here is reachable
 // only via /admin (role-gated by the admin layout) and is backed by RLS's

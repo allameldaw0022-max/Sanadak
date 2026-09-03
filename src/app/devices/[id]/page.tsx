@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { ArrowRight, Smartphone, Calendar, RefreshCw, Palette, Hash, BadgeCheck, ChevronLeft } from "lucide-react";
-import { getCurrentUser, getMyDeviceById, getDeviceReportsForDevice } from "@/lib/supabase/queries";
+import {
+  getCurrentUser,
+  getMyDeviceById,
+  getDeviceReportsForDevice,
+  getMyCertificateIdForDevice,
+} from "@/lib/supabase/queries";
 import { Container } from "@/components/ui/Container";
 import { DeviceStatusBadge } from "@/components/devices/DeviceStatusBadge";
 import { ReportStatusBadge } from "@/components/devices/ReportStatusBadge";
@@ -44,7 +49,10 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
   const device = await getMyDeviceById(user.id, id);
   if (!device) notFound();
 
-  const reports = await getDeviceReportsForDevice(user.id, id);
+  const [reports, existingCertificateId] = await Promise.all([
+    getDeviceReportsForDevice(user.id, id),
+    getMyCertificateIdForDevice(user.id, device.id),
+  ]);
 
   return (
     <Container className="py-8 sm:py-12">
@@ -83,7 +91,11 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="mt-4">
-          <IssueCertificateButton deviceId={device.id} />
+          <IssueCertificateButton
+            deviceId={device.id}
+            deviceStatus={device.currentStatus}
+            existingCertificateId={existingCertificateId}
+          />
         </div>
       </div>
 
