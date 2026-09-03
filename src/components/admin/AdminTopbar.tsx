@@ -4,12 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { adminNavLinks } from "./AdminSidebar";
+import { AdminNotificationBell } from "./AdminNotificationBell";
+import type { AdminInboxNotification } from "@/lib/supabase/queries";
 
-export function AdminTopbar() {
+export function AdminTopbar({ notifications }: { notifications: AdminInboxNotification[] }) {
   const pathname = usePathname();
 
   return (
     <div className="sticky top-16 z-30 border-b border-slate-200 bg-white md:hidden">
+      <div className="flex items-center justify-between gap-2 px-4 pt-3">
+        <p className="text-sm font-bold text-navy">لوحة تحكم سندك</p>
+        <AdminNotificationBell notifications={notifications} />
+      </div>
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-3">
         {adminNavLinks.map((link) => {
           const isActive = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);

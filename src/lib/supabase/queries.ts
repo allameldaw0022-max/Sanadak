@@ -615,6 +615,40 @@ export async function getMyNotifications(userId: string): Promise<NotificationIt
   }));
 }
 
+// Admin's own "needs review" inbox: every admin-facing notification type
+// written by the migration is prefixed admin_ (admin_new_claim,
+// admin_new_report, admin_new_subscription_request, admin_claim_reopened),
+// so filtering on that prefix here keeps this list to actionable admin
+// events only -- it deliberately excludes any personal notification this
+// same account might also have (e.g. if the admin's own device ever gets a
+// claim_approved notification), which is a different, non-actionable kind
+// of row already covered by /account/notifications. RLS
+// (notifications_select_own) is still the real enforcement: this can only
+// ever return rows where user_id = the passed-in admin's own id.
+export type AdminInboxNotification = NotificationItem;
+
+export async function getAdminInboxNotifications(adminId: string): Promise<AdminInboxNotification[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("notifications")
+    .select("id, type, title, body, related_table, related_id, read_at, created_at")
+    .eq("user_id", adminId)
+    .like("type", "admin_%")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  return (data ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    relatedTable: n.related_table,
+    relatedId: n.related_id,
+    readAt: n.read_at,
+    createdAt: n.created_at,
+  }));
+}
+
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   const supabase = await createClient();
   const { count } = await supabase

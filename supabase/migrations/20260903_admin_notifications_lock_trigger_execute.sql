@@ -1,0 +1,21 @@
+-- Companion to 20260903_admin_notifications.sql, recorded as its own
+-- migration file so the same change is captured in git history and can be
+-- re-applied to a fresh environment (it was already applied directly to
+-- production alongside that migration).
+--
+-- PostgREST exposes any SECURITY DEFINER function as a callable RPC unless
+-- EXECUTE is revoked, including trigger functions (a direct RPC call to one
+-- always fails at runtime with "trigger functions can only be called as
+-- triggers", but revoking removes the exposed surface entirely and closes
+-- the corresponding Supabase security-advisor warning). Trigger invocation
+-- itself does not require the invoking role to hold EXECUTE, so this has no
+-- effect on the two triggers actually firing on device_reports /
+-- dealer_subscription_requests inserts (device_reports_notify_admins,
+-- dealer_subscription_requests_notify_admins).
+--
+-- REVOKE is naturally idempotent (revoking a privilege that is already
+-- absent is a no-op, not an error), touches only these two functions'
+-- EXECUTE privilege, and does not touch any RLS policy, any other
+-- function's grants, or any data.
+revoke execute on function public.notify_admins_new_device_report() from public, anon, authenticated;
+revoke execute on function public.notify_admins_new_subscription_request() from public, anon, authenticated;

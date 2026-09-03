@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Smartphone, FileSearch, ShieldAlert, BadgeCheck, Store, CreditCard, Bell, ShieldCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminNotificationBell } from "./AdminNotificationBell";
+import type { AdminInboxNotification } from "@/lib/supabase/queries";
 
 const links = [
   { href: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
@@ -18,14 +20,25 @@ const links = [
   { href: "/admin/users", label: "المستخدمون", icon: Users },
 ];
 
-export function AdminSidebar({ adminName, adminEmail }: { adminName: string; adminEmail: string }) {
+export function AdminSidebar({
+  adminName,
+  adminEmail,
+  notifications,
+}: {
+  adminName: string;
+  adminEmail: string;
+  notifications: AdminInboxNotification[];
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="hidden w-64 shrink-0 border-l border-slate-200 bg-white md:flex md:flex-col">
-      <div className="border-b border-slate-100 p-6">
-        <p className="text-sm font-bold text-navy">{adminName}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-500">{adminEmail}</p>
+      <div className="flex items-start justify-between gap-2 border-b border-slate-100 p-6">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-navy">{adminName}</p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">{adminEmail}</p>
+        </div>
+        <AdminNotificationBell notifications={notifications} />
       </div>
 
       <nav className="flex-1 space-y-1 p-4">
