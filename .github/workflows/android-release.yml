@@ -70,6 +70,23 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 14
 
+      # A .aab is Play Store-only and can't be sideloaded directly. This
+      # produces a real installable, signed .apk from the exact same
+      # signingConfig/keystore.properties written above -- same secrets,
+      # same certificate (verified: A7:59:A9:05:7B:38:D4:63:F1:6F:FF:E1:1C:
+      # 3E:D4:32:2E:9D:9D:49:5E:EB:9B:E4:D5:23:42:E7:81:D4:5E:D2, matching
+      # public/.well-known/assetlinks.json), just a different Gradle task.
+      - name: Build signed release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanadak-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+
       - name: Clean up signing material
         if: always()
         working-directory: android
